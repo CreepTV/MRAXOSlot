@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot 1 - Slotgame</title>
+    <link rel="stylesheet" href="slot1.css">
+    <script defer src="slot1.js"></script>
+</head>
+<body>
+    <header>
+        <div class="balance">💰 <span id="balance">1000</span> €</div>
+        <a href="index.html" class="back">Zurück</a>
+    </header>
+    <main>
+        <div id="emoji-waterfall"></div>
+        <div class="slot-machine">
+            <div class="bet-control">
+                <button id="bet-minus">-</button>
+                <span id="bet-amount">10</span>💰
+                <button id="bet-plus">+</button>
+            </div>
+            <div class="reels">
+                <div class="reel" id="reel1">
+                  <div class="reel-window">
+                    <div class="reel-strip" id="strip1"></div>
+                  </div>
+                </div>
+                <div class="reel" id="reel2">
+                  <div class="reel-window">
+                    <div class="reel-strip" id="strip2"></div>
+                  </div>
+                </div>
+                <div class="reel" id="reel3">
+                  <div class="reel-window">
+                    <div class="reel-strip" id="strip3"></div>
+                  </div>
+                </div>
+            </div>
+            <button id="spin">Spin</button>
+            <div class="result" id="result"></div>
+        </div>
+    </main>
+</body>
+</html>
