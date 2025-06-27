@@ -3,7 +3,16 @@
 
 document.querySelectorAll('.slot-card').forEach(card => {
     card.addEventListener('click', () => {
-        alert('Slot-Game öffnen: ' + card.textContent);
+        const cardText = card.textContent.trim();
+        if (cardText === 'Slot 1') {
+            window.location.href = 'slot1.html';
+        } else if (cardText === 'Slot 2') {
+            // Hier kann später slot2.html verlinkt werden
+            alert('Slot 2 wird bald verfügbar sein!');
+        } else if (cardText === 'Slot 3') {
+            // Hier kann später slot3.html verlinkt werden
+            alert('Slot 3 wird bald verfügbar sein!');
+        }
     });
 });
 

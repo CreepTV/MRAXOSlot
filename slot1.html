@@ -8,40 +8,58 @@
     <script defer src="slot1.js"></script>
 </head>
 <body>
-    <header>
-        <div class="balance">💰 <span id="balance">1000</span> €</div>
-        <a href="index.html" class="back">Zurück</a>
-    </header>
-    <main>
-        <div id="emoji-waterfall"></div>
-        <div class="slot-machine">
-            <div class="bet-control">
-                <button id="bet-minus">-</button>
-                <span id="bet-amount">10</span>💰
-                <button id="bet-plus">+</button>
+    <!-- Ladebildschirm -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="slot-machine-icon">🎰</div>
+            <h2>Spiel wird geladen...</h2>
+            <div class="loading-spinner">
+                <div class="spinner"></div>
             </div>
-            <div class="reels">
-                <div id="left-side-emoji" class="side-emoji left-emoji">🎰</div>
-                <div id="right-side-emoji" class="side-emoji right-emoji">🍀</div>
-                <div class="reel" id="reel1">
-                  <div class="reel-window">
-                    <div class="reel-strip" id="strip1"></div>
-                  </div>
-                </div>
-                <div class="reel" id="reel2">
-                  <div class="reel-window">
-                    <div class="reel-strip" id="strip2"></div>
-                  </div>
-                </div>
-                <div class="reel" id="reel3">
-                  <div class="reel-window">
-                    <div class="reel-strip" id="strip3"></div>
-                  </div>
-                </div>
+            <div class="loading-progress">
+                <div class="progress-bar" id="progress-bar"></div>
             </div>
-            <button id="spin"></button>
-            <div class="result" id="result"></div>
+            <p class="loading-text" id="loading-text">Initialisiere Spiel...</p>
         </div>
-    </main>
+    </div>
+
+    <!-- Hauptinhalt (zunächst versteckt) -->
+    <div id="main-content" class="main-content" style="display: none;">
+        <header>
+            <div class="balance">💰 <span id="balance">1000</span> €</div>
+            <a href="index.html" class="back">Zurück</a>
+        </header>
+        <main>
+            <div id="emoji-waterfall"></div>
+            <div class="slot-machine">
+                <div class="bet-control">
+                    <button id="bet-minus">-</button>
+                    <span id="bet-amount">10</span>💰
+                    <button id="bet-plus">+</button>
+                </div>
+                <div class="reels">
+                    <div id="left-side-emoji" class="side-emoji left-emoji">🎰</div>
+                    <div id="right-side-emoji" class="side-emoji right-emoji">🍀</div>
+                    <div class="reel" id="reel1">
+                      <div class="reel-window">
+                        <div class="reel-strip" id="strip1"></div>
+                      </div>
+                    </div>
+                    <div class="reel" id="reel2">
+                      <div class="reel-window">
+                        <div class="reel-strip" id="strip2"></div>
+                      </div>
+                    </div>
+                    <div class="reel" id="reel3">
+                      <div class="reel-window">
+                        <div class="reel-strip" id="strip3"></div>
+                      </div>
+                    </div>
+                </div>
+                <button id="spin"></button>
+                <div class="result" id="result"></div>
+            </div>
+        </main>
+    </div>
 </body>
 </html>

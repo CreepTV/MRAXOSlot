@@ -1,4 +1,122 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Ladebildschirm-Logik
+  function initializeLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainContent = document.getElementById('main-content');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+    
+    const loadingSteps = [
+      { text: 'Initialisiere Spiel...', duration: 500 },
+      { text: 'Lade Grafiken...', duration: 800 },
+      { text: 'Lade Sounds...', duration: 700 },
+      { text: 'Bereite Walzen vor...', duration: 600 },
+      { text: 'Starte Spiel...', duration: 400 }
+    ];
+    
+    let currentStep = 0;
+    let progress = 0;
+    
+    function updateLoadingStep() {
+      if (currentStep < loadingSteps.length) {
+        const step = loadingSteps[currentStep];
+        loadingText.textContent = step.text;
+        
+        const targetProgress = ((currentStep + 1) / loadingSteps.length) * 100;
+        
+        // Progress Bar animieren
+        const progressInterval = setInterval(() => {
+          progress += 2;
+          if (progress >= targetProgress) {
+            progress = targetProgress;
+            clearInterval(progressInterval);
+            
+            setTimeout(() => {
+              currentStep++;
+              if (currentStep < loadingSteps.length) {
+                updateLoadingStep();
+              } else {
+                // Ladevorgang abgeschlossen
+                completeLoading();
+              }
+            }, step.duration);
+          }
+          progressBar.style.width = progress + '%';
+        }, 30);
+      }
+    }
+    
+    function completeLoading() {
+      loadingText.textContent = 'Fertig!';
+      progressBar.style.width = '100%';
+      
+      setTimeout(() => {
+        // Ladebildschirm ausblenden
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transform = 'scale(0.9)';
+        loadingScreen.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+          mainContent.style.display = 'block';
+          mainContent.classList.add('loaded');
+          
+          // Starte Pop-in Animationen nach dem Laden
+          setTimeout(() => {
+            startPopInAnimations();
+            playStartSound();
+          }, 200);
+        }, 500);
+      }, 500);
+    }
+    
+    // Ladevorgang starten
+    setTimeout(() => {
+      updateLoadingStep();
+    }, 800);
+  }
+  
+  // Ladebildschirm initialisieren
+  initializeLoadingScreen();
+  // Pop-in Animationen starten
+  function startPopInAnimations() {
+    // Header Elemente
+    const header = document.querySelector('header');
+    const balance = document.querySelector('.balance');
+    const backButton = document.querySelector('.back');
+    
+    // Slot Machine Elemente
+    const slotMachine = document.querySelector('.slot-machine');
+    const reels = document.querySelectorAll('.reel');
+    const leftEmoji = document.querySelector('.left-emoji');
+    const rightEmoji = document.querySelector('.right-emoji');
+    const spinButton = document.querySelector('#spin');
+    const betControl = document.querySelector('.bet-control');
+    
+    // Header Pop-in
+    if (header) header.classList.add('pop-in-header');
+    if (balance) balance.classList.add('pop-in-balance');
+    if (backButton) backButton.classList.add('pop-in-back-button');
+    
+    // Slot Machine Pop-in
+    if (slotMachine) slotMachine.classList.add('pop-in-slot-machine');
+    
+    // Reels Pop-in
+    reels.forEach(reel => {
+      reel.classList.add('pop-in-reel');
+    });
+    
+    // Side Emojis Pop-in
+    if (leftEmoji) leftEmoji.classList.add('pop-in-side-emoji');
+    if (rightEmoji) rightEmoji.classList.add('pop-in-side-emoji');
+    
+    // Spin Button Pop-in
+    if (spinButton) spinButton.classList.add('pop-in-spin-button');
+    
+    // Bet Control Pop-in
+    if (betControl) betControl.classList.add('pop-in-bet-control');
+  }
+
   // Audio-System initialisieren
   const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
   startSound.volume = 0.6; // Lautstärke auf 60% setzen
@@ -15,9 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }, { once: true });
     });
   }
-
-  // Start-Sound abspielen
-  playStartSound();
 
   let spinning = false;
   let fastStop = false;
