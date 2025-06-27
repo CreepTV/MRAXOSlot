@@ -1,10 +1,32 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Audio-System initialisieren
+  const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
+  startSound.volume = 0.6; // Lautstärke auf 60% setzen
+  
+  // Start-Sound abspielen wenn die Seite geladen wird
+  function playStartSound() {
+    startSound.currentTime = 0; // Sound von Anfang an abspielen
+    startSound.play().catch(error => {
+      console.log('Start-Sound konnte nicht abgespielt werden:', error);
+      // Fallback: Versuche es nach User-Interaktion
+      document.addEventListener('click', function playOnFirstClick() {
+        startSound.play().catch(e => console.log('Sound-Wiedergabe fehlgeschlagen:', e));
+        document.removeEventListener('click', playOnFirstClick);
+      }, { once: true });
+    });
+  }
+
+  // Start-Sound abspielen
+  playStartSound();
+
   let spinning = false;
   let fastStop = false;
   let spinTimeouts = [];
   let finishReelFns = [];
   let autoSpinActive = false;
   let autoSpinInterval = null;
+  let buttonPressed = false;
+  let buttonPressTimer = null;
 
   const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐', '🔔', '🍇', '💎', '🍀'];
   const winTable = {
@@ -66,6 +88,88 @@ document.addEventListener('DOMContentLoaded', function() {
   updateBalance();
   updateBetDisplay();
 
+  // Initialize spin button
+  spinBtn.textContent = '';
+  spinBtn.className = '';
+
+  // Seitenanimationen - Große Emojis (früh definieren)
+  const leftEmoji = document.getElementById('left-side-emoji');
+  const rightEmoji = document.getElementById('right-side-emoji');
+
+  // Emoji-Sets für verschiedene Situationen
+  const emojiSets = {
+    idle: ['🎰', '🍀'],
+    spinning: ['🌀', '⚡'],
+    win: ['🎉', '💰'],
+    bigWin: ['🔥', '✨'],
+    jackpot: ['💎', '👑'],
+    autoSpin: ['🤖', '🔄'],
+    lose: ['😔', '💸']
+  };
+
+  let currentEmojiState = 'idle';
+  let emojiAnimationTimeout = null;
+
+  function updateSideEmojis(state, duration = 3000) {
+    // Prüfe ob Elemente existieren
+    if (!leftEmoji || !rightEmoji) return;
+    
+    if (emojiAnimationTimeout) {
+      clearTimeout(emojiAnimationTimeout);
+    }
+
+    // Entferne alle Klassen
+    leftEmoji.className = 'side-emoji left-emoji';
+    rightEmoji.className = 'side-emoji right-emoji';
+
+    // Setze neue Emojis
+    if (emojiSets[state]) {
+      leftEmoji.textContent = emojiSets[state][0];
+      rightEmoji.textContent = emojiSets[state][1];
+    }
+
+    // Füge Animation hinzu
+    if (state !== 'idle') {
+      leftEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
+      rightEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
+    }
+
+    currentEmojiState = state;
+
+    // Zurück zu idle nach bestimmter Zeit
+    if (state !== 'idle' && state !== 'autoSpin') {
+      emojiAnimationTimeout = setTimeout(() => {
+        updateSideEmojis('idle');
+      }, duration);
+    }
+  }
+
+  // Spezielle Emoji-Wechsel für bestimmte Ereignisse
+  function triggerSpecialEmojiEvent(eventType) {
+    // Prüfe ob Elemente existieren
+    if (!leftEmoji || !rightEmoji) return;
+    
+    switch(eventType) {
+      case 'lowBalance':
+        if (balance < 100) {
+          leftEmoji.textContent = '😰';
+          rightEmoji.textContent = '💸';
+          updateSideEmojis('lose', 4000);
+        }
+        break;
+      case 'noMoney':
+        leftEmoji.textContent = '💸';
+        rightEmoji.textContent = '😭';
+        updateSideEmojis('lose', 5000);
+        break;
+      case 'firstSpin':
+        leftEmoji.textContent = '🎲';
+        rightEmoji.textContent = '🎯';
+        updateSideEmojis('spinning', 2000);
+        break;
+    }
+  }
+
   function updateBetDisplay() {
     bet = betSteps[betIndex];
     betAmountEl.textContent = bet;
@@ -87,8 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Vereinfachte Button-Funktionalität
-  let buttonPressTimer = null;
-  let buttonPressed = false;
 
   spinBtn.addEventListener('mousedown', (e) => {
     if (autoSpinActive) {
@@ -131,7 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleSpin() {
     if (spinning && !fastStop) {
-      spinBtn.textContent = `Spin`;
       // Fast-Stop: Animationen sofort überspringen und Ergebnis direkt anzeigen
       fastStop = true;
       spinTimeouts.forEach(clearTimeout);
@@ -157,23 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     autoSpinActive = true;
     updateSideEmojis('autoSpin'); // Seitenanimation für AutoSpin
-    spinBtn.textContent = 'AUTO SPIN';
-    spinBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e8e)';
-    spinBtn.style.animation = 'pulse 1.5s infinite';
-    
-    // Füge AutoSpin CSS hinzu
-    if (!document.getElementById('autospin-styles')) {
-      const autoSpinStyles = document.createElement('style');
-      autoSpinStyles.id = 'autospin-styles';
-      autoSpinStyles.textContent = `
-        @keyframes pulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
-          50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
-        }
-      `;
-      document.head.appendChild(autoSpinStyles);
-    }
+    spinBtn.textContent = '';
+    spinBtn.className = 'auto-spin';
     
     // Erster Spin sofort
     performSpin();
@@ -197,15 +283,9 @@ document.addEventListener('DOMContentLoaded', function() {
       autoSpinInterval = null;
     }
     
-    spinBtn.textContent = spinning ? 'Stop' : 'Spin';
-    spinBtn.style.background = '';
-    spinBtn.style.animation = '';
-    
-    // Entferne AutoSpin Styles
-    const autoSpinStyles = document.getElementById('autospin-styles');
-    if (autoSpinStyles) {
-      autoSpinStyles.remove();
-    }
+    // Reset button to normal state
+    spinBtn.textContent = '';
+    spinBtn.className = spinning ? 'spinning' : '';
   }
 
   function performSpin() {
@@ -222,8 +302,10 @@ document.addEventListener('DOMContentLoaded', function() {
       updateSideEmojis('spinning', 2000);
     }
     
+    // Set button to spinning state (unless in AutoSpin mode)
     if (!autoSpinActive) {
-      spinBtn.textContent = 'Stop';
+      spinBtn.textContent = '';
+      spinBtn.className = 'spinning';
     }
 
     // Animation: Reels starten gleichzeitig, stoppen aber von links nach rechts
@@ -257,7 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         finishSpin(finalSymbols);
         spinning = false;
         if (!autoSpinActive) {
-          spinBtn.textContent = `Spin`;
+          spinBtn.textContent = '';
+          spinBtn.className = '';
         }
       }
     }
@@ -559,78 +642,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   setInterval(spawnEmojiDrop, 180); // Dichte erhöht, aber nicht zu viel
 
-  // Seitenanimationen - Große Emojis
-  const leftEmoji = document.getElementById('left-side-emoji');
-  const rightEmoji = document.getElementById('right-side-emoji');
-
-  // Emoji-Sets für verschiedene Situationen
-  const emojiSets = {
-    idle: ['🎰', '🍀'],
-    spinning: ['🌀', '⚡'],
-    win: ['🎉', '💰'],
-    bigWin: ['🔥', '✨'],
-    jackpot: ['💎', '👑'],
-    autoSpin: ['🤖', '🔄'],
-    lose: ['😔', '💸']
-  };
-
-  let currentEmojiState = 'idle';
-  let emojiAnimationTimeout = null;
-
-  function updateSideEmojis(state, duration = 3000) {
-    if (emojiAnimationTimeout) {
-      clearTimeout(emojiAnimationTimeout);
-    }
-
-    // Entferne alle Klassen
-    leftEmoji.className = 'side-emoji left-emoji';
-    rightEmoji.className = 'side-emoji right-emoji';
-
-    // Setze neue Emojis
-    if (emojiSets[state]) {
-      leftEmoji.textContent = emojiSets[state][0];
-      rightEmoji.textContent = emojiSets[state][1];
-    }
-
-    // Füge Animation hinzu
-    if (state !== 'idle') {
-      leftEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
-      rightEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
-    }
-
-    currentEmojiState = state;
-
-    // Zurück zu idle nach bestimmter Zeit
-    if (state !== 'idle' && state !== 'autoSpin') {
-      emojiAnimationTimeout = setTimeout(() => {
-        updateSideEmojis('idle');
-      }, duration);
-    }
-  }
-
-  // Spezielle Emoji-Wechsel für bestimmte Ereignisse
-  function triggerSpecialEmojiEvent(eventType) {
-    switch(eventType) {
-      case 'lowBalance':
-        if (balance < 100) {
-          leftEmoji.textContent = '😰';
-          rightEmoji.textContent = '💸';
-          updateSideEmojis('lose', 4000);
-        }
-        break;
-      case 'noMoney':
-        leftEmoji.textContent = '💸';
-        rightEmoji.textContent = '😭';
-        updateSideEmojis('lose', 5000);
-        break;
-      case 'firstSpin':
-        leftEmoji.textContent = '🎲';
-        rightEmoji.textContent = '🎯';
-        updateSideEmojis('spinning', 2000);
-        break;
-    }
-  }
-
   // Zufällige Emoji-Wechsel alle 30 Sekunden im Idle-Zustand
   function randomEmojiChange() {
     if (currentEmojiState === 'idle' && !spinning && !autoSpinActive) {
@@ -849,7 +860,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finished.every(Boolean)) {
         finishSpin(finalSymbols);
         spinning = false;
-        spinBtn.textContent = `Spin`;
+        spinBtn.textContent = '';
+        spinBtn.className = '';
       }
     }
 
