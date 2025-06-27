@@ -119,7 +119,157 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Audio-System initialisieren
   const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
-  startSound.volume = 0.6; // Lautstärke auf 60% setzen
+  startSound.volume = 0.2; // Lautstärke auf 60% setzen
+  
+  // Interaktives Musik-System mit Stems
+  const musicStems = {
+    vocals: new Audio('data/sounds/Electro SwingStems/vocals.m4a'),
+    bass: new Audio('data/sounds/Electro SwingStems/bass.m4a'),
+    drums: new Audio('data/sounds/Electro SwingStems/drums.m4a'),
+    piano: new Audio('data/sounds/Electro SwingStems/piano.m4a'),
+    guitar: new Audio('data/sounds/Electro SwingStems/guitar.m4a'),
+    other: new Audio('data/sounds/Electro SwingStems/other.m4a')
+  };
+
+  // Musik-Einstellungen
+  let musicStarted = false;
+  let spinMusicTimeout = null;
+  let isFadingOut = false;
+  
+  // Alle Stems auf Loop setzen und Volumen initialisieren
+  Object.keys(musicStems).forEach(stemName => {
+    const stem = musicStems[stemName];
+    stem.loop = true;
+    stem.volume = 0;
+    
+    // Basis-Stems (vocals, bass, drums, piano) haben normale Lautstärke
+    if (['vocals', 'bass', 'drums', 'piano'].includes(stemName)) {
+      stem.targetVolume = 0.15; // Etwas leiser als Start-Sound
+    } else {
+      // Guitar und Other starten stumm
+      stem.targetVolume = 0.12;
+    }
+  });
+
+  // Smooth Fade-in/out Funktion
+  function fadeAudio(audioElement, targetVolume, duration = 1000) {
+    const startVolume = audioElement.volume;
+    const volumeDiff = targetVolume - startVolume;
+    const startTime = Date.now();
+    
+    function updateVolume() {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Smooth easing function
+      const easeProgress = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      audioElement.volume = Math.max(0, Math.min(1, startVolume + (volumeDiff * easeProgress)));
+      
+      if (progress < 1) {
+        requestAnimationFrame(updateVolume);
+      } else {
+        audioElement.volume = targetVolume;
+        if (targetVolume === 0) {
+          audioElement.pause();
+        }
+      }
+    }
+    
+    requestAnimationFrame(updateVolume);
+  }
+
+  // Musik starten
+  function startInteractiveMusic() {
+    if (musicStarted) return;
+    
+    musicStarted = true;
+    
+    // Starte Basis-Stems (vocals, bass, drums, piano)
+    ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
+      const stem = musicStems[stemName];
+      stem.currentTime = 0;
+      stem.play().catch(error => {
+        console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
+      });
+      // Fade-in über 2 Sekunden
+      fadeAudio(stem, stem.targetVolume, 2000);
+    });
+    
+    // Guitar und Other starten auch, aber bleiben stumm
+    ['guitar', 'other'].forEach(stemName => {
+      const stem = musicStems[stemName];
+      stem.currentTime = 0;
+      stem.play().catch(error => {
+        console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
+      });
+      // Bleiben bei 0 Volume
+    });
+  }
+
+  // Spin-Musik aktivieren (Guitar und Other entstummen)
+  function activateSpinMusic() {
+    if (!musicStarted) return;
+    
+    isFadingOut = false;
+    
+    // Clear existing timeout
+    if (spinMusicTimeout) {
+      clearTimeout(spinMusicTimeout);
+    }
+    
+    // Fade-in Guitar und Other
+    fadeAudio(musicStems.guitar, musicStems.guitar.targetVolume, 800);
+    fadeAudio(musicStems.other, musicStems.other.targetVolume, 800);
+    
+    // Nach 30 Sekunden ohne Spin, fade out
+    spinMusicTimeout = setTimeout(() => {
+      deactivateSpinMusic();
+    }, 30000);
+  }
+
+  // Spin-Musik deaktivieren (Guitar und Other stummen)
+  function deactivateSpinMusic() {
+    if (!musicStarted || isFadingOut) return;
+    
+    isFadingOut = true;
+    
+    // Langsamerer Fade-out für Guitar und Other
+    fadeAudio(musicStems.guitar, 0, 2000);
+    fadeAudio(musicStems.other, 0, 2000);
+    
+    setTimeout(() => {
+      isFadingOut = false;
+    }, 2000);
+  }
+
+  // Reset Spin-Musik Timer (bei erneutem Spin)
+  function resetSpinMusicTimer() {
+    if (spinMusicTimeout) {
+      clearTimeout(spinMusicTimeout);
+    }
+    
+    spinMusicTimeout = setTimeout(() => {
+      deactivateSpinMusic();
+    }, 30000);
+  }
+
+  // Musik komplett stoppen (falls benötigt)
+  function stopAllMusic() {
+    Object.values(musicStems).forEach(stem => {
+      fadeAudio(stem, 0, 1000);
+    });
+    
+    setTimeout(() => {
+      Object.values(musicStems).forEach(stem => {
+        stem.pause();
+        stem.currentTime = 0;
+      });
+      musicStarted = false;
+    }, 1000);
+  }
   
   // Start-Sound abspielen wenn die Seite geladen wird
   function playStartSound() {
@@ -129,9 +279,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // Fallback: Versuche es nach User-Interaktion
       document.addEventListener('click', function playOnFirstClick() {
         startSound.play().catch(e => console.log('Sound-Wiedergabe fehlgeschlagen:', e));
+        // Starte auch die interaktive Musik nach User-Interaktion
+        startInteractiveMusic();
         document.removeEventListener('click', playOnFirstClick);
       }, { once: true });
+      return;
     });
+    
+    // Starte interaktive Musik nach Start-Sound
+    setTimeout(() => {
+      startInteractiveMusic();
+    }, 1000);
   }
 
   let spinning = false;
@@ -361,6 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Reset Spin-Musik Timer bei erneutem Spin
+    if (musicStarted && (musicStems.guitar.volume > 0 || musicStems.other.volume > 0)) {
+      resetSpinMusicTimer();
+    }
+
     performSpin();
   }
 
@@ -411,6 +574,9 @@ document.addEventListener('DOMContentLoaded', function() {
     balance -= bet;
     updateBalance();
     resultEl.textContent = '';
+    
+    // Aktiviere Spin-Musik (Guitar und Other entstummen)
+    activateSpinMusic();
     
     // Seitenanimation für Spinning (nur wenn nicht AutoSpin)
     if (!autoSpinActive) {
@@ -831,6 +997,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="dev-btn" data-action="add-balance">💰 +1000€ Balance</button>
       <button class="dev-btn" data-action="reset-balance">🔄 Reset Balance</button>
       <button class="dev-btn" data-action="fast-spin">⚡ Fast Spin Mode</button>
+      <button class="dev-btn" data-action="toggle-music">🎵 Toggle Music</button>
+      <button class="dev-btn" data-action="test-spin-music">🎸 Test Spin Music</button>
     `;
 
     // Add CSS for dev buttons
@@ -1056,6 +1224,23 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'fast-spin':
         // Toggle between normal and fast spin timings
         alert('Fast Spin Mode aktiviert! (Bereits implementiert für Dev-Wins)');
+        break;
+      case 'toggle-music':
+        if (musicStarted) {
+          stopAllMusic();
+          alert('Musik gestoppt');
+        } else {
+          startInteractiveMusic();
+          alert('Musik gestartet');
+        }
+        break;
+      case 'test-spin-music':
+        if (musicStarted) {
+          activateSpinMusic();
+          alert('Spin-Musik (Guitar + Other) aktiviert für 30 Sekunden');
+        } else {
+          alert('Bitte erst Musik starten!');
+        }
         break;
     }
   }
