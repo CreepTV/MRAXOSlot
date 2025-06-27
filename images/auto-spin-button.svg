@@ -1,0 +1,45 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Background -->
+  <defs>
+    <radialGradient id="autoGradient" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#4fc3f7;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#29b6f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0288d1;stop-opacity:1" />
+    </radialGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Circle Background -->
+  <circle cx="50" cy="50" r="45" fill="url(#autoGradient)" stroke="#0277bd" stroke-width="3" filter="url(#shadow)"/>
+  
+  <!-- Auto Symbol (Circular arrows) -->
+  <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+    <!-- Outer circular arrow -->
+    <path d="M 30 50 A 20 20 0 1 1 70 50" />
+    <polygon points="68,45 75,50 68,55" fill="#ffffff"/>
+    
+    <!-- Inner circular arrow (opposite direction) -->
+    <path d="M 70 50 A 20 20 0 1 1 30 50" />
+    <polygon points="32,55 25,50 32,45" fill="#ffffff"/>
+  </g>
+  
+  <!-- Center dot -->
+  <circle cx="50" cy="50" r="4" fill="#ffffff"/>
+  
+  <!-- Pulse Effects -->
+  <g opacity="0.6" filter="url(#glow)">
+    <circle cx="50" cy="50" r="35" fill="none" stroke="#4fc3f7" stroke-width="1" opacity="0.5">
+      <animate attributeName="r" values="35;40;35" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', function() {
   let fastStop = false;
   let spinTimeouts = [];
   let finishReelFns = [];
+  let autoSpinActive = false;
+  let autoSpinInterval = null;
+  let buttonPressed = false;
+  let buttonPressTimer = null;
 
   const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐', '🔔', '🍇', '💎', '🍀'];
   const winTable = {
@@ -64,6 +68,88 @@ document.addEventListener('DOMContentLoaded', function() {
   updateBalance();
   updateBetDisplay();
 
+  // Initialize spin button
+  spinBtn.textContent = '';
+  spinBtn.className = '';
+
+  // Seitenanimationen - Große Emojis (früh definieren)
+  const leftEmoji = document.getElementById('left-side-emoji');
+  const rightEmoji = document.getElementById('right-side-emoji');
+
+  // Emoji-Sets für verschiedene Situationen
+  const emojiSets = {
+    idle: ['🎰', '🍀'],
+    spinning: ['🌀', '⚡'],
+    win: ['🎉', '💰'],
+    bigWin: ['🔥', '✨'],
+    jackpot: ['💎', '👑'],
+    autoSpin: ['🤖', '🔄'],
+    lose: ['😔', '💸']
+  };
+
+  let currentEmojiState = 'idle';
+  let emojiAnimationTimeout = null;
+
+  function updateSideEmojis(state, duration = 3000) {
+    // Prüfe ob Elemente existieren
+    if (!leftEmoji || !rightEmoji) return;
+    
+    if (emojiAnimationTimeout) {
+      clearTimeout(emojiAnimationTimeout);
+    }
+
+    // Entferne alle Klassen
+    leftEmoji.className = 'side-emoji left-emoji';
+    rightEmoji.className = 'side-emoji right-emoji';
+
+    // Setze neue Emojis
+    if (emojiSets[state]) {
+      leftEmoji.textContent = emojiSets[state][0];
+      rightEmoji.textContent = emojiSets[state][1];
+    }
+
+    // Füge Animation hinzu
+    if (state !== 'idle') {
+      leftEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
+      rightEmoji.classList.add(state === 'bigWin' ? 'big-win' : state);
+    }
+
+    currentEmojiState = state;
+
+    // Zurück zu idle nach bestimmter Zeit
+    if (state !== 'idle' && state !== 'autoSpin') {
+      emojiAnimationTimeout = setTimeout(() => {
+        updateSideEmojis('idle');
+      }, duration);
+    }
+  }
+
+  // Spezielle Emoji-Wechsel für bestimmte Ereignisse
+  function triggerSpecialEmojiEvent(eventType) {
+    // Prüfe ob Elemente existieren
+    if (!leftEmoji || !rightEmoji) return;
+    
+    switch(eventType) {
+      case 'lowBalance':
+        if (balance < 100) {
+          leftEmoji.textContent = '😰';
+          rightEmoji.textContent = '💸';
+          updateSideEmojis('lose', 4000);
+        }
+        break;
+      case 'noMoney':
+        leftEmoji.textContent = '💸';
+        rightEmoji.textContent = '😭';
+        updateSideEmojis('lose', 5000);
+        break;
+      case 'firstSpin':
+        leftEmoji.textContent = '🎲';
+        rightEmoji.textContent = '🎯';
+        updateSideEmojis('spinning', 2000);
+        break;
+    }
+  }
+
   function updateBetDisplay() {
     bet = betSteps[betIndex];
     betAmountEl.textContent = bet;
@@ -84,9 +170,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  spinBtn.addEventListener('click', () => {
+  // Vereinfachte Button-Funktionalität
+
+  spinBtn.addEventListener('mousedown', (e) => {
+    if (autoSpinActive) {
+      // Bei AutoSpin sofort stoppen
+      stopAutoSpin();
+      return;
+    }
+    
+    buttonPressed = true;
+    
+    // Timer für Long Press
+    buttonPressTimer = setTimeout(() => {
+      if (buttonPressed) {
+        startAutoSpin();
+      }
+    }, 800);
+  });
+
+  spinBtn.addEventListener('mouseup', (e) => {
+    if (buttonPressTimer) {
+      clearTimeout(buttonPressTimer);
+      buttonPressTimer = null;
+    }
+    
+    if (buttonPressed && !autoSpinActive) {
+      // Nur spinnen wenn kein AutoSpin läuft
+      handleSpin();
+    }
+    
+    buttonPressed = false;
+  });
+
+  spinBtn.addEventListener('mouseleave', (e) => {
+    if (buttonPressTimer) {
+      clearTimeout(buttonPressTimer);
+      buttonPressTimer = null;
+    }
+    buttonPressed = false;
+  });
+
+  function handleSpin() {
     if (spinning && !fastStop) {
-      spinBtn.textContent = `Spin`;
       // Fast-Stop: Animationen sofort überspringen und Ergebnis direkt anzeigen
       fastStop = true;
       spinTimeouts.forEach(clearTimeout);
@@ -96,8 +222,53 @@ document.addEventListener('DOMContentLoaded', function() {
     if (spinning) return;
     if (balance < bet) {
       resultEl.textContent = 'Nicht genug Guthaben!';
+      triggerSpecialEmojiEvent('noMoney');
       return;
     }
+
+    performSpin();
+  }
+
+  function startAutoSpin() {
+    if (balance < bet) {
+      resultEl.textContent = 'Nicht genug Guthaben für AutoSpin!';
+      triggerSpecialEmojiEvent('noMoney');
+      return;
+    }
+    
+    autoSpinActive = true;
+    updateSideEmojis('autoSpin'); // Seitenanimation für AutoSpin
+    spinBtn.textContent = '';
+    spinBtn.className = 'auto-spin';
+    
+    // Erster Spin sofort
+    performSpin();
+    
+    // Dann alle 3 Sekunden
+    autoSpinInterval = setInterval(() => {
+      if (!spinning && balance >= bet) {
+        performSpin();
+      } else if (balance < bet) {
+        stopAutoSpin();
+        resultEl.textContent = 'AutoSpin gestoppt - Nicht genug Guthaben!';
+      }
+    }, 3000);
+  }
+
+  function stopAutoSpin() {
+    autoSpinActive = false;
+    updateSideEmojis('idle'); // Zurück zu normalen Emojis
+    if (autoSpinInterval) {
+      clearInterval(autoSpinInterval);
+      autoSpinInterval = null;
+    }
+    
+    // Reset button to normal state
+    spinBtn.textContent = '';
+    spinBtn.className = spinning ? 'spinning' : '';
+  }
+
+  function performSpin() {
     spinning = true;
     fastStop = false;
     spinTimeouts = [];
@@ -105,7 +276,17 @@ document.addEventListener('DOMContentLoaded', function() {
     balance -= bet;
     updateBalance();
     resultEl.textContent = '';
-    spinBtn.textContent = 'Stop';
+    
+    // Seitenanimation für Spinning (nur wenn nicht AutoSpin)
+    if (!autoSpinActive) {
+      updateSideEmojis('spinning', 2000);
+    }
+    
+    // Set button to spinning state (unless in AutoSpin mode)
+    if (!autoSpinActive) {
+      spinBtn.textContent = '';
+      spinBtn.className = 'spinning';
+    }
 
     // Animation: Reels starten gleichzeitig, stoppen aber von links nach rechts
     // Finalsymbole werden am Ende der Animation sichtbar und die Animation läuft auf das richtige Muster aus
@@ -137,9 +318,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finished.every(Boolean)) {
         finishSpin(finalSymbols);
         spinning = false;
-        spinBtn.textContent = `Spin`;
+        if (!autoSpinActive) {
+          spinBtn.textContent = '';
+          spinBtn.className = '';
+        }
       }
     }
+    
     function animateReel(reelIdx, finalSymbols, startDelay, stopDelay) {
       const strip = strips[reelIdx];
       // Zeige aktuelle Symbole bis zum Spin, nicht sofort neue!
@@ -152,10 +337,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       let spinSymbols = [...current];
-      // Mehr Symbole für längeren Spin
-      for (let i = 0; i < 25; i++) {
+      
+      // Verkürzte Animation für AutoSpin
+      const spinLength = autoSpinActive ? 15 : 25;
+      for (let i = 0; i < spinLength; i++) {
         spinSymbols.push(symbols[Math.floor(Math.random() * symbols.length)]);
       }
+      
       // Füge die finalen Symbole am Ende an, damit die Animation auf das richtige Muster ausläuft
       finalSymbols.forEach(sym => spinSymbols.push(sym));
       spinSymbols.forEach(sym => {
@@ -186,9 +374,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Kontinuierliche Animation mit verlangsamender Geschwindigkeit
       let t1 = setTimeout(() => {
-        // Eine einzige kontinuierliche Animation mit custom cubic-bezier für Verlangsamung
-        // cubic-bezier(0.25, 0.1, 0.25, 1) sorgt für sanfte Verlangsamung
-        const duration = 2500 + stopDelay; // Basisdauer + individuelle Verzögerung
+        // Verkürzte Dauer für AutoSpin
+        const baseDuration = autoSpinActive ? 1200 : 2500;
+        const duration = baseDuration + stopDelay;
         strip.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
         // Finale Position inkludiert bereits die zufällige Verschiebung
         const finalY = -70 * (spinSymbols.length - 3) + finalOffset;
@@ -202,12 +390,17 @@ document.addEventListener('DOMContentLoaded', function() {
       spinTimeouts.push(t1);
     }
     
+    // Verkürzte Delays für AutoSpin
+    const delay1 = autoSpinActive ? 0 : 0;
+    const delay2 = autoSpinActive ? 300 : 800;
+    const delay3 = autoSpinActive ? 600 : 1600;
+    
     // Alle Reels starten gleichzeitig (startDelay = 0), aber stoppen nacheinander
     // Kontinuierliche Animation mit gestaffelten Stopps
-    animateReel(0, finalSymbols[0], 0, 0);      // Erstes Reel stoppt zuerst (2.5s)
-    animateReel(1, finalSymbols[1], 0, 800);    // Zweites Reel stoppt später (3.3s)
-    animateReel(2, finalSymbols[2], 0, 1600);   // Drittes Reel stoppt am spätesten (4.1s)
-  });
+    animateReel(0, finalSymbols[0], 0, delay1);
+    animateReel(1, finalSymbols[1], 0, delay2);
+    animateReel(2, finalSymbols[2], 0, delay3);
+  }
 
   function finishSpin(finalSymbols) {
     // Gewinne hervorheben (nur mittlere Reihe)
@@ -326,20 +519,33 @@ document.addEventListener('DOMContentLoaded', function() {
       balance += win;
       updateBalance();
       
-      // Bestimme Gewinn-Level für verschiedene Meldungen
+      // Bestimme Gewinn-Level für verschiedene Meldungen und Seitenanimationen
       let winMessage = '';
+      let emojiState = 'win';
+      
       if (win >= 1000) {
         winMessage = `🎉 JACKPOT! +${win}€ (${winDescription})`;
+        emojiState = 'jackpot';
       } else if (win >= 500) {
         winMessage = `🔥 MEGA WIN! +${win}€ (${winDescription})`;
+        emojiState = 'bigWin';
       } else if (win >= 100) {
         winMessage = `✨ BIG WIN! +${win}€ (${winDescription})`;
+        emojiState = 'bigWin';
       } else if (win >= 50) {
         winMessage = `🎊 SUPER! +${win}€ (${winDescription})`;
+        emojiState = 'win';
       } else if (win >= 20) {
         winMessage = `🎈 NICE! +${win}€ (${winDescription})`;
+        emojiState = 'win';
       } else {
         winMessage = `👍 Gewinn! +${win}€ (${winDescription})`;
+        emojiState = 'win';
+      }
+      
+      // Seitenanimation für Gewinn (außer bei AutoSpin)
+      if (!autoSpinActive) {
+        updateSideEmojis(emojiState, win >= 100 ? 5000 : 3000);
       }
       
       resultEl.textContent = winMessage;
@@ -352,12 +558,21 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } else {
       resultEl.textContent = 'Leider kein Gewinn.';
+      // Seitenanimation für Verlieren (nur wenn nicht AutoSpin)
+      if (!autoSpinActive) {
+        updateSideEmojis('lose', 2000);
+      }
     }
     localStorage.setItem('slot1_balance', balance);
   }
 
   function updateBalance() {
     balanceEl.textContent = balance;
+    
+    // Prüfe auf niedriges Guthaben
+    if (balance < 100 && balance > 0 && currentEmojiState === 'idle') {
+      triggerSpecialEmojiEvent('lowBalance');
+    }
   }
 
   function fillInitialReels() {
@@ -372,6 +587,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   fillInitialReels();
+
+  // Initialisiere Seitenanimationen
+  updateSideEmojis('idle');
 
   // Verbesserter Emoji-Wasserfall
   const emojiWaterfall = document.getElementById('emoji-waterfall');
@@ -403,6 +621,22 @@ document.addEventListener('DOMContentLoaded', function() {
     drop.addEventListener('animationend', () => drop.remove());
   }
   setInterval(spawnEmojiDrop, 180); // Dichte erhöht, aber nicht zu viel
+
+  // Zufällige Emoji-Wechsel alle 30 Sekunden im Idle-Zustand
+  function randomEmojiChange() {
+    if (currentEmojiState === 'idle' && !spinning && !autoSpinActive) {
+      const randomSets = [
+        ['🎰', '🍀'], ['🎲', '🎯'], ['💫', '⭐'], ['🎪', '🎭'], 
+        ['🎨', '🎪'], ['🔮', '✨'], ['🎡', '🎢'], ['🎊', '🎉']
+      ];
+      const randomSet = randomSets[Math.floor(Math.random() * randomSets.length)];
+      leftEmoji.textContent = randomSet[0];
+      rightEmoji.textContent = randomSet[1];
+    }
+  }
+
+  // Starte zufällige Emoji-Wechsel
+  setInterval(randomEmojiChange, 30000);
 
   // Developer Menu
   let devMenuOpen = false;
@@ -606,7 +840,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finished.every(Boolean)) {
         finishSpin(finalSymbols);
         spinning = false;
-        spinBtn.textContent = `Spin`;
+        spinBtn.textContent = '';
+        spinBtn.className = '';
       }
     }
 
@@ -957,4 +1192,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initialize dev menu
   createDevMenu();
+
+  // Leertasten-Funktionalität hinzufügen
+  let spaceKeyTimer = null;
+  let spaceKeyPressed = false;
+  let autoSpinTriggered = false;
+
+  document.addEventListener('keydown', function(event) {
+    if ((event.code === 'Space' || event.key === ' ') && !spaceKeyPressed) {
+      event.preventDefault();
+      spaceKeyPressed = true;
+      autoSpinTriggered = false;
+      
+      if (autoSpinActive) {
+        stopAutoSpin();
+        return;
+      }
+      
+      // Starte Timer für Long Press AutoSpin
+      spaceKeyTimer = setTimeout(() => {
+        autoSpinTriggered = true;
+        startAutoSpin();
+      }, 800); // 800ms für Long Press
+    }
+  });
+
+  document.addEventListener('keyup', function(event) {
+    if (event.code === 'Space' || event.key === ' ') {
+      event.preventDefault();
+      
+      if (spaceKeyTimer) {
+        clearTimeout(spaceKeyTimer);
+        spaceKeyTimer = null;
+      }
+      
+      // Nur wenn es kein Long Press war und kein AutoSpin läuft
+      if (spaceKeyPressed && !autoSpinTriggered && !autoSpinActive) {
+        handleSpin();
+      }
+      
+      spaceKeyPressed = false;
+      autoSpinTriggered = false;
+    }
+  });
 });

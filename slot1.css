@@ -29,6 +29,12 @@ header .back {
 header .back:hover {
   background: #4a4e69;
 }
+.balance {
+  padding: 5px 7px 7px 5px;
+  border-radius: 8px;
+  font-weight: bold;
+  background-color: #636389;
+}
 main {
   flex: 1;
   display: flex;
@@ -108,29 +114,73 @@ main {
   to { box-shadow: 0 0 18px #ffe066; }
 }
 #spin {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     position: absolute;
     right: 20px;
     bottom: 20px;
-    background:    #edce0d;
-    border:        3px solid #dca500;
-    border-radius: 100%;
-    box-shadow:    0 5px #b3b3b353;
-    padding:       5px 5px;
-    color:         #ffffff;
-    display:       flex;
-    align-items:   center;
+    background-image: url('data/grafik/UI/spinbutton.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    color: transparent;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 0.7rem;
-    font:          normal bold 26px/1 "Open Sans", sans-serif;
-    text-align:    center;
+    font-size: 0;
+    text-align: center;
     margin-bottom: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+#spin:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
 }
 
 #spin:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px #c7782d;
+    transform: scale(0.95);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Spin Button States */
+#spin.spinning {
+    background-image: url('data/grafik/UI/stopbutton.png');
+    animation: spin-pulse 1.5s ease-in-out infinite;
+}
+
+#spin.auto-spin {
+    background-image: url('data/grafik/UI/autospinbutton.png');
+    animation: auto-spin-glow 2s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes spin-pulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 8px 16px rgba(255,82,82,0.6));
+    }
+}
+
+@keyframes auto-spin-glow {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)) drop-shadow(0 0 20px rgba(79,195,247,0.5));
+    }
+    50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4)) drop-shadow(0 0 30px rgba(79,195,247,0.8));
+    }
 }
 .result {
   min-height: 2.2rem;
@@ -206,5 +256,201 @@ main {
   100% {
     transform: translateY(100vh) scale(1.15) rotate(var(--rot,0deg)) translateX(calc(var(--wave, 0px) * 2));
     opacity: 0.1;
+  }
+}
+
+/* Seitenanimationen - Große Emojis */
+.side-emoji {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  font-size: 5rem;
+  z-index: 5;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 20px rgba(247, 210, 3, 0.3));
+  animation: side-idle 4s ease-in-out infinite;
+}
+
+.left-emoji {
+  left: 50px;
+  animation-delay: 0s;
+}
+
+.right-emoji {
+  right: 50px;
+  animation-delay: 2s;
+}
+
+/* Basis-Animation für Idle-Zustand */
+@keyframes side-idle {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 20px rgba(247, 210, 3, 0.3));
+  }
+  50% { 
+    transform: translateY(-55%) scale(1.05) rotate(2deg);
+    filter: drop-shadow(0 0 25px rgba(247, 210, 3, 0.5));
+  }
+}
+
+/* AutoSpin Animation */
+.side-emoji.autospin {
+  animation: side-autospin 1s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(255, 107, 107, 0.8));
+}
+
+@keyframes side-autospin {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  25% { 
+    transform: translateY(-48%) scale(1.1) rotate(-5deg);
+    opacity: 1;
+  }
+  75% { 
+    transform: translateY(-52%) scale(1.1) rotate(5deg);
+    opacity: 1;
+  }
+}
+
+/* Gewinn-Animation */
+.side-emoji.win {
+  animation: side-win 0.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1));
+}
+
+@keyframes side-win {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% { 
+    transform: translateY(-45%) scale(1.2) rotate(10deg);
+    opacity: 1;
+  }
+}
+
+/* Big Win Animation */
+.side-emoji.big-win {
+  animation: side-big-win 0.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 50px rgba(50, 250, 123, 1));
+}
+
+@keyframes side-big-win {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  25% { 
+    transform: translateY(-40%) scale(1.3) rotate(-15deg);
+    opacity: 1;
+  }
+  75% { 
+    transform: translateY(-60%) scale(1.3) rotate(15deg);
+    opacity: 1;
+  }
+}
+
+/* Jackpot Animation */
+.side-emoji.jackpot {
+  animation: side-jackpot 0.3s ease-in-out infinite;
+  filter: drop-shadow(0 0 60px rgba(255, 20, 147, 1));
+}
+
+@keyframes side-jackpot {
+  0%, 100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  33% { 
+    transform: translateY(-35%) scale(1.4) rotate(-20deg);
+    opacity: 1;
+  }
+  66% { 
+    transform: translateY(-65%) scale(1.4) rotate(20deg);
+    opacity: 1;
+  }
+}
+
+/* Spin Animation */
+.side-emoji.spinning {
+  animation: side-spinning 2s linear infinite;
+  filter: drop-shadow(0 0 25px rgba(135, 206, 250, 0.8));
+}
+
+@keyframes side-spinning {
+  0% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+  }
+  100% { 
+    transform: translateY(-50%) scale(1) rotate(360deg);
+  }
+}
+
+/* Verlieren Animation */
+.side-emoji.lose {
+  animation: side-lose 1.5s ease-out;
+  filter: drop-shadow(0 0 15px rgba(128, 128, 128, 0.6));
+}
+
+@keyframes side-lose {
+  0% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: translateY(-45%) scale(0.9) rotate(-10deg);
+    opacity: 0.5;
+  }
+  100% { 
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+}
+
+/* Responsive Design für Seitenanimationen */
+@media (max-width: 768px) {
+  .side-emoji {
+    font-size: 4rem;
+  }
+  
+  .left-emoji {
+    left: -5rem !important;
+  }
+  
+  .right-emoji {
+    right: -5rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .side-emoji {
+    font-size: 3rem;
+  }
+  
+  .left-emoji {
+    left: -4rem !important;
+  }
+  
+  .right-emoji {
+    right: -4rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .side-emoji {
+    font-size: 2.5rem;
+  }
+  
+  .left-emoji {
+    left: -3rem !important;
+  }
+  
+  .right-emoji {
+    right: -3rem !important;
   }
 }
