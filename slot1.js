@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingText = document.getElementById('loading-text');
     
     const loadingSteps = [
-      { text: 'Initialisiere Spiel...', duration: 500 },
-      { text: 'Lade Grafiken...', duration: 800 },
-      { text: 'Lade Sounds...', duration: 700 },
-      { text: 'Bereite Walzen vor...', duration: 600 },
-      { text: 'Starte Spiel...', duration: 400 }
+      { text: 'Initialisiere Spiel...', duration: 400 },
+      { text: 'Lade Grafiken...', duration: 700 },
+      { text: 'Lade Sounds...', duration: 300 },
+      { text: 'Bereite Walzen vor...', duration: 500 },
+      { text: 'Starte Spiel...', duration: 300 }
     ];
     
     let currentStep = 0;
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let spinMusicTimeout = null;
   let isFadingOut = false;
   
-  // Stems konfigurieren - VEREINFACHT
+  // Stems konfigurieren
   Object.keys(musicStems).forEach(stemName => {
     const stem = musicStems[stemName];
     stem.loop = true;
@@ -172,14 +172,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ZENTRALE AUDIO-START FUNKTION - VEREINFACHT
+  // ZENTRALE AUDIO-START FUNKTION - NUR HIER WIRD MUSIK GESTARTET!
   function startAudioSystem() {
+    // Doppel-Check: Nur starten wenn Laden abgeschlossen UND nicht bereits gestartet
     if (!loadingComplete || musicStarted) {
       console.log('🎵 Audio-Start blockiert - loadingComplete:', loadingComplete, 'musicStarted:', musicStarted);
       return;
     }
     
-    console.log('🎵 STARTE AUDIO-SYSTEM!');
+    console.log('🎵 STARTE AUDIO-SYSTEM JETZT!');
     musicStarted = true;
     
     // Start-Sound abspielen
@@ -362,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Aktiviere Listeners SOFORT beim Seitenladen
   activateInteractionListeners();
 
-  // Einfache Fade-in/out Funktion
+  // Smooth Fade-in/out Funktion
   function fadeAudio(audioElement, targetVolume, duration = 1000) {
     const startVolume = audioElement.volume;
     const volumeDiff = targetVolume - startVolume;
@@ -388,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(updateVolume);
       } else {
         audioElement.volume = targetVolume;
-        if (targetVolume === 0) {
+        if (targetVolume === 0 && !isFadingOut) {
           setTimeout(() => {
             if (audioElement.volume === 0) {
               audioElement.pause();
@@ -401,86 +402,105 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(updateVolume);
   }
 
-  // Einfache Musik-Start-Funktion
+  // Interaktive Musik starten (NUR AUS startAudioSystem aufrufen!)
   function startInteractiveMusic() {
     console.log('🎵 Starte interaktive Musik...');
     
-    ['vocals', 'bass', 'drums', 'piano'].forEach((stemName, index) => {
+    // WICHTIG: Alle Stems gleichzeitig starten für perfekte Synchronisation
+    const startPromises = [];
+    
+    // Basis-Stems (vocals, bass, drums, piano) - diese sind hörbar
+    ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
       const stem = musicStems[stemName];
-      stem.currentTime = 0;
+      stem.currentTime = 0; // Alle bei 0 starten
       stem.volume = 0;
       
-      setTimeout(() => {
-        const playPromise = stem.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log(`✅ ${stemName} Stem gestartet`);
-            fadeAudio(stem, stem.targetVolume, 2000);
-          }).catch(error => {
-            console.error(`❌ ${stemName} Stem Fehler:`, error);
-          });
-        }
-      }, index * 300); // Gestaffelt starten
+      const playPromise = stem.play().then(() => {
+        console.log(`✅ ${stemName} Stem gestartet`);
+        fadeAudio(stem, stem.targetVolume, 2000);
+      }).catch(error => {
+        console.error(`❌ ${stemName} Stem Fehler:`, error);
+      });
+      
+      startPromises.push(playPromise);
     });
     
-    // Guitar und Other stumm starten
-    ['guitar', 'other'].forEach((stemName, index) => {
+    // Spin-Stems (guitar, other) - diese starten stumm aber SYNCHRON
+    ['guitar', 'other'].forEach(stemName => {
       const stem = musicStems[stemName];
-      stem.currentTime = 0;
+      stem.currentTime = 0; // WICHTIG: Auch diese bei 0 starten
       stem.volume = 0;
       
-      setTimeout(() => {
-        const playPromise = stem.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log(`✅ ${stemName} Stem bereit (stumm)`);
-          }).catch(error => {
-            console.error(`❌ ${stemName} Stem Fehler:`, error);
-          });
-        }
-      }, 1000 + (index * 200));
+      const playPromise = stem.play().then(() => {
+        console.log(`✅ ${stemName} Stem bereit (stumm aber synchron)`);
+      }).catch(error => {
+        console.error(`❌ ${stemName} Stem Fehler:`, error);
+      });
+      
+      startPromises.push(playPromise);
+    });
+    
+    // Warte bis alle Stems gestartet sind
+    Promise.all(startPromises).then(() => {
+      console.log('🎵 Alle Stems erfolgreich synchronisiert gestartet!');
+    }).catch(error => {
+      console.log('🎵 Einige Stems konnten nicht gestartet werden, aber weiter...');
     });
   }
 
-  // Einfache Spin-Musik aktivieren
+  // Spin-Musik aktivieren (Guitar und Other entstummen)
   function activateSpinMusic() {
     if (!musicStarted) return;
     
-    console.log('🎵 Aktiviere Spin-Musik...');
-    
+    // Stop any existing fade-out process
     isFadingOut = false;
     
+    // Clear existing timeout
     if (spinMusicTimeout) {
       clearTimeout(spinMusicTimeout);
     }
     
-    // Guitar und Other aktivieren
-    ['guitar', 'other'].forEach(stemName => {
-      const stem = musicStems[stemName];
-      
-      if (stem.paused) {
-        stem.play().catch(error => {
-          console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
-        });
-      }
-      
-      fadeAudio(stem, stem.targetVolume, 1000);
-    });
+    // SYNCHRONISATION: Nutze die aktuelle Zeit der Basis-Stems als Referenz
+    const referenceTime = musicStems.vocals.currentTime;
     
-    // Nach 20 Sekunden deaktivieren
+    // Stelle sicher, dass Guitar und Other laufen (falls sie pausiert wurden)
+    if (musicStems.guitar.paused) {
+      musicStems.guitar.currentTime = referenceTime; // SYNC!
+      musicStems.guitar.play().catch(error => {
+        console.log('Guitar Stem konnte nicht abgespielt werden:', error);
+      });
+    } else {
+      // Auch wenn bereits läuft, synchronisiere die Zeit
+      musicStems.guitar.currentTime = referenceTime;
+    }
+    
+    if (musicStems.other.paused) {
+      musicStems.other.currentTime = referenceTime; // SYNC!
+      musicStems.other.play().catch(error => {
+        console.log('Other Stem konnte nicht abgespielt werden:', error);
+      });
+    } else {
+      // Auch wenn bereits läuft, synchronisiere die Zeit
+      musicStems.other.currentTime = referenceTime;
+    }
+    
+    // Fade-in Guitar und Other
+    fadeAudio(musicStems.guitar, musicStems.guitar.targetVolume, 800);
+    fadeAudio(musicStems.other, musicStems.other.targetVolume, 800);
+    
+    // Nach 20 Sekunden ohne Spin, fade out
     spinMusicTimeout = setTimeout(() => {
       deactivateSpinMusic();
     }, 20000);
   }
 
-  // Einfache Spin-Musik deaktivieren
+  // Spin-Musik deaktivieren (Guitar und Other stummen)
   function deactivateSpinMusic() {
     if (!musicStarted || isFadingOut) return;
     
-    console.log('🎵 Deaktiviere Spin-Musik...');
-    
     isFadingOut = true;
     
+    // Langsamerer Fade-out für Guitar und Other
     fadeAudio(musicStems.guitar, 0, 2000);
     fadeAudio(musicStems.other, 0, 2000);
     
@@ -489,12 +509,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 2000);
   }
 
-  // Einfacher Timer-Reset
+  // Reset Spin-Musik Timer (bei erneutem Spin)
   function resetSpinMusicTimer() {
     if (spinMusicTimeout) {
       clearTimeout(spinMusicTimeout);
     }
     
+    // Wenn Stems bereits stumm sind, aktiviere sie wieder
     if (musicStems.guitar.volume === 0 || musicStems.other.volume === 0) {
       activateSpinMusic();
       return;
@@ -505,14 +526,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 20000);
   }
 
-  // Einfacher Musik-Stop
+  // Musik komplett stoppen (falls benötigt)
   function stopAllMusic() {
-    console.log('🎵 Stoppe alle Musik...');
-    
-    Object.values(musicStems).forEach((stem, index) => {
-      setTimeout(() => {
-        fadeAudio(stem, 0, 1000);
-      }, index * 100);
+    Object.values(musicStems).forEach(stem => {
+      fadeAudio(stem, 0, 1000);
     });
     
     setTimeout(() => {
@@ -742,12 +759,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleSpin() {
     if (spinning && !fastStop) {
-      // Fast-Stop: Walzen schneller zum Stoppen bringen statt abrupt
+      // Early-Stop: Verkürze Wartezeiten (gleiche Geschwindigkeit, anderes Ergebnis)
       fastStop = true;
+      
+      // Button wird grau wenn Fast-Stop aktiviert wird
+      if (!autoSpinActive) {
+        spinBtn.className = 'fast-stop';
+        console.log('🎰 Fast-Stop aktiviert - Button wird grau');
+      }
+      
       accelerateReelsToStop();
       return;
     }
-    if (spinning) return;
+    if (spinning && fastStop) {
+      // Fast-Stop ist bereits aktiv, ignoriere weitere Klicks
+      return;
+    }
     if (balance < bet) {
       resultEl.textContent = 'Nicht genug Guthaben!';
       triggerSpecialEmojiEvent('noMoney');
@@ -759,37 +786,32 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('🎵 NOTFALL: Starte Basis-Stems beim Spinnen, da Musik noch nicht aktiv');
       musicStarted = true;
       
-      // Starte nur die Basis-Stems (vocals, bass, drums, piano)
-      ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
+      // WICHTIG: Alle Stems gleichzeitig starten für Synchronisation
+      const notfallPromises = [];
+      
+      // Starte alle Stems synchron
+      Object.keys(musicStems).forEach(stemName => {
         const stem = musicStems[stemName];
-        stem.currentTime = 0;
+        stem.currentTime = 0; // Alle bei 0 starten
         stem.volume = 0;
         
-        const playPromise = stem.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log(`✅ Notfall-Start: ${stemName} Stem gestartet`);
+        const playPromise = stem.play().then(() => {
+          console.log(`✅ Notfall-Start: ${stemName} Stem gestartet`);
+          
+          // Nur Basis-Stems auf Zielvolumen faden
+          if (['vocals', 'bass', 'drums', 'piano'].includes(stemName)) {
             fadeAudio(stem, stem.targetVolume, 1500);
-          }).catch(error => {
-            console.error(`❌ Notfall-Start: ${stemName} Stem Fehler:`, error);
-          });
-        }
+          }
+          // Guitar und Other bleiben stumm aber laufen synchron
+        }).catch(error => {
+          console.error(`❌ Notfall-Start: ${stemName} Stem Fehler:`, error);
+        });
+        
+        notfallPromises.push(playPromise);
       });
       
-      // Starte auch Guitar und Other stumm für spätere Aktivierung
-      ['guitar', 'other'].forEach(stemName => {
-        const stem = musicStems[stemName];
-        stem.currentTime = 0;
-        stem.volume = 0;
-        
-        const playPromise = stem.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log(`✅ Notfall-Start: ${stemName} Stem bereit (stumm)`);
-          }).catch(error => {
-            console.error(`❌ Notfall-Start: ${stemName} Stem Fehler:`, error);
-          });
-        }
+      Promise.all(notfallPromises).then(() => {
+        console.log('🎵 Notfall-Synchronisation erfolgreich!');
       });
     }
 
@@ -1228,6 +1250,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Starte zufällige Emoji-Wechsel
   setInterval(randomEmojiChange, 30000);
 
+  // Developer Menu initialisieren
+  createDevMenu();
+
   // Developer Menu
   let devMenuOpen = false;
   let isDragging = false;
@@ -1240,8 +1265,8 @@ document.addEventListener('DOMContentLoaded', function() {
     devBtn.innerHTML = '🛠️';
     devBtn.style.cssText = `
       position: fixed;
-      top: 20px;
-      right: 20px;
+      bottom: 20px;
+      left: 20px;
       width: 50px;
       height: 50px;
       background: #ff6b6b;
@@ -1262,8 +1287,8 @@ document.addEventListener('DOMContentLoaded', function() {
     devMenu.id = 'dev-menu';
     devMenu.style.cssText = `
       position: fixed;
-      top: 80px;
-      right: 20px;
+      bottom: 80px;
+      left: 20px;
       width: 250px;
       background: #2e2e4f;
       border: 2px solid #f7d203;
@@ -1533,421 +1558,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Big Win Popup System
-  function showBigWinPopup(winType, amount, symbols) {
-    // Create popup overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'big-win-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 2000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.5s ease-out;
-    `;
-
-    // Create popup container
-    const popup = document.createElement('div');
-    popup.id = 'big-win-popup';
-    popup.style.cssText = `
-      background: linear-gradient(135deg, #2e2e4f 0%, #474772 50%, #2e2e4f 100%);
-      border: 4px solid #f7d203;
-      border-radius: 20px;
-      padding: 40px;
-      text-align: center;
-      box-shadow: 
-        0 0 50px rgba(247, 210, 3, 0.6),
-        0 0 100px rgba(247, 210, 3, 0.4),
-        inset 0 0 30px rgba(247, 210, 3, 0.1);
-      animation: popupAppear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      max-width: 500px;
-      position: relative;
-      overflow: hidden;
-    `;
-
-    // Determine win level and styling
-    let titleText, titleColor, symbolsText, glowColor;
+  // Fast Stop function - verkürzt die normalen Delays für früheres Stoppen
+  function accelerateReelsToStop() {
+    console.log('🎰 Fast-Stop aktiviert - verkürze Stop-Delays');
     
-    if (winType === 'jackpot') {
-      titleText = 'SUPER MEGA WIN!';
-      titleColor = '#ff1493';
-      symbolsText = symbols;
-      glowColor = 'magenta';
-    } else if (winType === 'mega') {
-      titleText = 'MEGA WIN!';
-      titleColor = '#ff6b6b';
-      symbolsText = symbols;  // Use actual winning symbols
-      glowColor = 'red';
-    } else if (winType === 'big') {
-      titleText = 'BIG WIN!';
-      titleColor = '#00ffff';
-      symbolsText = symbols;  // Use actual winning symbols
-      glowColor = 'cyan';
-    } else if (winType === 'super') {
-      titleText = 'SUPER WIN!';
-      titleColor = '#50fa7b';
-      symbolsText = symbols;  // Use actual winning symbols
-      glowColor = 'lime';
-    } else {
-      titleText = 'GEWINN!';
-      titleColor = '#f7d203';
-      symbolsText = symbols;  // Use actual winning symbols
-      glowColor = 'gold';
-    }
-
-    // Split title into words for individual pop-in animation
-    const titleWords = titleText.split(' ');
-    let titleHTML = '<div class="win-title-container" style="margin-bottom: 20px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px;">';
-    titleWords.forEach((word, index) => {
-      titleHTML += `
-        <span class="title-word" style="
-          font-size: 4rem;
-          font-weight: bold;
-          color: ${titleColor};
-          text-shadow: 
-            0 0 20px ${titleColor},
-            0 0 40px ${titleColor},
-            2px 2px 4px rgba(0,0,0,0.8);
-          font-family: Impact, Arial Black, sans-serif;
-          letter-spacing: 3px;
-          text-stroke: 2px #f7d203;
-          -webkit-text-stroke: 2px #f7d203;
-          animation: 
-            wordPopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
-            titlePulse 1.5s infinite alternate ${0.6 + (index * 0.2)}s;
-          animation-delay: ${index * 0.2}s, ${0.6 + (index * 0.2)}s;
-          transform: scale(0) rotate(-180deg);
-          opacity: 0;
-        ">${word}</span>
-      `;
+    // Lösche alle bestehenden Timeouts
+    spinTimeouts.forEach(timeout => {
+      clearTimeout(timeout);
     });
-    titleHTML += '</div>';
-
-    popup.innerHTML = `
-      <div class="sparkles-bg"></div>
-      ${titleHTML}
-      
-      <div class="win-symbols" style="
-        font-size: 5rem;
-        margin: 20px 0;
-        animation: symbolsBounce 1s infinite alternate;
-        filter: drop-shadow(0 0 10px ${glowColor});
-      ">${symbolsText}</div>
-      
-      <div class="win-amount" id="win-amount-display" style="
-        font-size: 3.5rem;
-        font-weight: bold;
-        color: #f7d203;
-        text-shadow: 
-          0 0 20px #f7d203,
-          0 0 40px #f7d203,
-          2px 2px 4px rgba(0,0,0,0.8);
-        background: linear-gradient(45deg, #f7d203, #ffed4e, #f7d203);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: amountShine 2s infinite;
-        margin: 20px 0;
-        font-family: Impact, Arial Black, sans-serif;
-      ">0€</div>
-      
-      <button class="continue-button" style="
-        background: linear-gradient(135deg, #f7d203 0%, #ffed4e 50%, #f7d203 100%);
-        border: 3px solid #ffffff;
-        border-radius: 15px;
-        color: #2e2e4f;
-        font-size: 1.8rem;
-        font-weight: bold;
-        padding: 15px 40px;
-        margin-top: 30px;
-        cursor: pointer;
-        box-shadow: 
-          0 6px 20px rgba(247, 210, 3, 0.4),
-          inset 0 2px 10px rgba(255, 255, 255, 0.3);
-        transition: all 0.3s ease;
-        animation: buttonPulse 2s infinite;
-        font-family: Arial, sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        opacity: 0;
-        transform: scale(0);
-        transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 25px rgba(247, 210, 3, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.4)'" 
-         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 6px 20px rgba(247, 210, 3, 0.4), inset 0 2px 10px rgba(255, 255, 255, 0.3)'">
-        WEITER
-      </button>
-    `;
-
-    // Add sparkles background
-    const sparklesBg = popup.querySelector('.sparkles-bg');
-    sparklesBg.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-    `;
-
-    // Create floating sparkles
-    for (let i = 0; i < 20; i++) {
-      const sparkle = document.createElement('div');
-      sparkle.textContent = '✨';
-      sparkle.style.cssText = `
-        position: absolute;
-        font-size: ${Math.random() * 20 + 10}px;
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 100}%;
-        animation: sparkleFloat ${Math.random() * 3 + 2}s infinite linear;
-        opacity: ${Math.random() * 0.8 + 0.2};
-      `;
-      sparklesBg.appendChild(sparkle);
-    }
-
-    // Add golden coins falling effect
-    for (let i = 0; i < 15; i++) {
-      const coin = document.createElement('div');
-      coin.textContent = '🪙';
-      coin.style.cssText = `
-        position: absolute;
-        font-size: ${Math.random() * 30 + 20}px;
-        left: ${Math.random() * 100}%;
-        top: -50px;
-        animation: coinFall ${Math.random() * 2 + 3}s infinite linear;
-        animation-delay: ${Math.random() * 2}s;
-      `;
-      popup.appendChild(coin);
-    }
-
-    overlay.appendChild(popup);
-    document.body.appendChild(overlay);
-
-    // Add CSS animations
-    const popupStyles = document.createElement('style');
-    popupStyles.textContent = `
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      
-      @keyframes popupAppear {
-        0% { 
-          transform: scale(0.3) rotate(-10deg);
-          opacity: 0;
-        }
-        50% {
-          transform: scale(1.1) rotate(5deg);
-        }
-        100% { 
-          transform: scale(1) rotate(0deg);
-          opacity: 1;
-        }
-      }
-      
-      @keyframes titlePulse {
-        0% { 
-          transform: scale(1);
-          text-shadow: 
-            0 0 20px ${titleColor},
-            0 0 40px ${titleColor},
-            2px 2px 4px rgba(0,0,0,0.8);
-        }
-        100% { 
-          transform: scale(1.05);
-          text-shadow: 
-            0 0 30px ${titleColor},
-            0 0 60px ${titleColor},
-            2px 2px 4px rgba(0,0,0,0.8);
-        }
-      }
-      
-      @keyframes wordPopIn {
-        0% {
-          transform: scale(0) rotate(-180deg);
-          opacity: 0;
-        }
-        50% {
-          transform: scale(1.2) rotate(-45deg);
-          opacity: 0.8;
-        }
-        100% {
-          transform: scale(1) rotate(0deg);
-          opacity: 1;
-        }
-      }
-      
-      @keyframes symbolsBounce {
-        0% { transform: translateY(0px) scale(1); }
-        100% { transform: translateY(-10px) scale(1.1); }
-      }
-      
-      @keyframes amountShine {
-        0% { 
-          background-position: -200px 0;
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.05);
-        }
-        100% { 
-          background-position: 200px 0;
-          transform: scale(1);
-        }
-      }
-      
-      @keyframes buttonPulse {
-        0%, 100% { 
-          transform: scale(1);
-          box-shadow: 0 6px 20px rgba(247, 210, 3, 0.4), inset 0 2px 10px rgba(255, 255, 255, 0.3);
-        }
-        50% { 
-          transform: scale(1.03);
-          box-shadow: 0 8px 25px rgba(247, 210, 3, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.4);
-        }
-      }
-      
-      @keyframes amountFinalPulse {
-        0% { 
-          transform: scale(1);
-        }
-        50% { 
-          transform: scale(1.1);
-        }
-        100% { 
-          transform: scale(1);
-        }
-      }
-      
-      @keyframes sparkleFloat {
-        0% { 
-          transform: translateY(0px) rotate(0deg);
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-        100% { 
-          transform: translateY(-20px) rotate(360deg);
-          opacity: 0;
-        }
-      }
-      
-      @keyframes coinFall {
-        0% { 
-          transform: translateY(-50px) rotateY(0deg);
-          opacity: 1;
-        }
-        100% { 
-          transform: translateY(600px) rotateY(720deg);
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(popupStyles);
-
-    // Function to close popup
-    function closePopup() {
-      overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
-      setTimeout(() => {
-        if (document.body.contains(overlay)) {
-          document.body.removeChild(overlay);
-        }
-        if (document.head.contains(popupStyles)) {
-          document.head.removeChild(popupStyles);
-        }
-      }, 300);
-    }
-
-    // Variables for counting animation
-    let countingComplete = false;
-    let countingSkipped = false;
-    let countingInterval = null;
+    spinTimeouts = [];
     
-    // Get references to elements
-    const winAmountDisplay = popup.querySelector('#win-amount-display');
-    const continueButton = popup.querySelector('.continue-button');
-    
-    // Start counting animation after a short delay
-    setTimeout(() => {
-      startCountingAnimation();
-    }, 1000); // Wait 1 second after popup appears
-
-    function startCountingAnimation() {
-      const startTime = Date.now();
-      const duration = Math.min(3000, Math.max(1500, amount * 2)); // Duration based on amount, between 1.5s and 3s
-      let currentAmount = 0;
-      
-      function updateCount() {
-        if (countingSkipped) {
-          currentAmount = amount;
-          winAmountDisplay.textContent = amount.toLocaleString() + '€';
-          finishCounting();
-          return;
-        }
+    // Für jede Walze: Verkürze die Wartezeit moderat
+    strips.forEach((strip, reelIdx) => {
+      if (!finished[reelIdx]) {
+        // SANFTERE Stop-Verzögerung - 400-1000ms statt normaler 800ms/1600ms/2400ms
+        const earlyStopDelay = 400 + (reelIdx * 300); // 400ms, 700ms, 1000ms
         
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        console.log(`🎰 Walze ${reelIdx + 1}: Sanfterer Stopp in ${earlyStopDelay}ms`);
         
-        // Ease out function for smooth deceleration
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        currentAmount = Math.floor(amount * easeProgress);
-        
-        winAmountDisplay.textContent = currentAmount.toLocaleString() + '€';
-        
-        if (progress < 1) {
-          countingInterval = requestAnimationFrame(updateCount);
-        } else {
-          currentAmount = amount;
-          winAmountDisplay.textContent = amount.toLocaleString() + '€';
-          finishCounting();
-        }
-      }
-      
-      countingInterval = requestAnimationFrame(updateCount);
-    }
-    
-    function finishCounting() {
-      countingComplete = true;
-      
-      // Show the continue button with animation
-      continueButton.style.opacity = '1';
-      continueButton.style.transform = 'scale(1)';
-      
-      // Add extra visual feedback
-      winAmountDisplay.style.animation = 'amountShine 2s infinite, amountFinalPulse 0.5s ease-out';
-    }
-    
-    function skipCounting() {
-      if (!countingComplete && !countingSkipped) {
-        countingSkipped = true;
-        if (countingInterval) {
-          cancelAnimationFrame(countingInterval);
-        }
-      }
-    }
-
-    // Allow skipping by clicking anywhere on the popup during counting
-    popup.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!countingComplete) {
-        skipCounting();
-      }
-    });
-
-    // Close popup only when "weiter" button is clicked AND counting is complete
-    continueButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (countingComplete || countingSkipped) {
-        closePopup();
-      } else {
-        skipCounting();
+        setTimeout(() => {
+          if (!finished[reelIdx] && finishReelFns[reelIdx]) {
+            // Rufe die ursprüngliche finish-Funktion auf
+            // Die Animation läuft mit NORMALER Geschwindigkeit aber stoppt früher
+            finishReelFns[reelIdx]();
+          }
+        }, earlyStopDelay);
       }
     });
   }

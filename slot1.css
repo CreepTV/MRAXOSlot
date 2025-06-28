@@ -44,7 +44,7 @@ main {
   z-index: 1;
 }
 .slot-machine {
-  margin-top: 60px;
+  margin-top: 90px;
   margin-bottom: 30px;
     width: 80%;
     background: #474772;
@@ -157,6 +157,13 @@ main {
     animation: spin-pulse 1.5s ease-in-out infinite;
 }
 
+#spin.fast-stop {
+    background-image: url('data/grafik/UI/stopbutton.png');
+    opacity: 0.6;
+    filter: grayscale(80%) drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    animation: fast-stop-pulse 1s ease-in-out infinite;
+}
+
 #spin.auto-spin {
     background-image: url('data/grafik/UI/autospinbutton.png');
     animation: auto-spin-glow 2s ease-in-out infinite;
@@ -171,6 +178,17 @@ main {
     50% {
         transform: scale(1.1);
         filter: drop-shadow(0 8px 16px rgba(255,82,82,0.6));
+    }
+}
+
+@keyframes fast-stop-pulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: grayscale(80%) drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    50% {
+        transform: scale(1.05);
+        filter: grayscale(80%) drop-shadow(0 6px 12px rgba(128,128,128,0.8));
     }
 }
 
@@ -277,12 +295,12 @@ main {
 }
 
 .left-emoji {
-  left: 50px;
+  left: 90px;
   animation-delay: 0s;
 }
 
 .right-emoji {
-  right: 50px;
+  right: 90px;
   animation-delay: 2s;
 }
 
