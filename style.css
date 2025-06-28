@@ -167,6 +167,250 @@ main {
   outline: none;
 }
 
+/* Emoji Bonanza Slot Card Design */
+.emoji-bonanza {
+  width: 160px;
+  height: 300px;
+  background: linear-gradient(135deg, #2e2e4f 0%, #474772 40%, #f7d203 100%);
+  border: 3px solid #f7d203;
+  color: #f2e9e4;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  box-shadow: 
+    0 8px 32px rgba(247, 210, 3, 0.4),
+    0 0 20px rgba(247, 210, 3, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.emoji-bonanza::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 70%, rgba(247, 210, 3, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.emoji-bonanza:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 
+    0 16px 48px rgba(247, 210, 3, 0.6),
+    0 0 30px rgba(247, 210, 3, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: #ffed4e;
+}
+
+.slot-card-header {
+  padding: 12px 10px 6px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.slot-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #f7d203;
+  text-shadow: 
+    0 0 8px rgba(247, 210, 3, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.6);
+  margin-bottom: 2px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+}
+
+.slot-subtitle {
+  font-size: 0.75rem;
+  color: #c9ada7;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.slot-preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  z-index: 2;
+}
+
+.preview-reels {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 210, 3, 0.3);
+}
+
+.preview-reel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 3px;
+  border: 1px solid rgba(247, 210, 3, 0.2);
+  width: 24px;
+}
+
+.symbol {
+  font-size: 1rem;
+  text-align: center;
+  line-height: 1;
+  animation: symbolFloat 3s infinite ease-in-out;
+  filter: drop-shadow(0 0 3px rgba(247, 210, 3, 0.5));
+}
+
+.preview-reel:nth-child(1) .symbol { animation-delay: 0s; }
+.preview-reel:nth-child(2) .symbol { animation-delay: 0.5s; }
+.preview-reel:nth-child(3) .symbol { animation-delay: 1s; }
+
+@keyframes symbolFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-1px); }
+}
+
+.jackpot-display {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(247, 210, 3, 0.2), rgba(255, 237, 78, 0.1));
+  border: 1px solid rgba(247, 210, 3, 0.4);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.jackpot-label {
+  font-size: 0.6rem;
+  color: #f7d203;
+  font-weight: bold;
+  margin-bottom: 1px;
+  text-shadow: 0 0 5px rgba(247, 210, 3, 0.8);
+}
+
+.jackpot-amount {
+  font-size: 0.9rem;
+  color: #ffed4e;
+  font-weight: bold;
+  text-shadow: 
+    0 0 6px rgba(255, 237, 78, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+  animation: jackpotPulse 2s infinite ease-in-out;
+}
+
+@keyframes jackpotPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.slot-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0 10px 8px;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.feature-tag {
+  font-size: 0.55rem;
+  background: rgba(247, 210, 3, 0.2);
+  color: #f7d203;
+  padding: 2px 5px;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 210, 3, 0.4);
+  font-weight: 500;
+  text-shadow: 0 0 3px rgba(247, 210, 3, 0.6);
+  line-height: 1;
+}
+
+.play-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: 12px 10px 10px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  z-index: 3;
+}
+
+.emoji-bonanza:hover .play-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.play-btn {
+  background: linear-gradient(135deg, #f7d203, #ffed4e);
+  color: #2e2e4f;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 3px 8px rgba(247, 210, 3, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  width: 100%;
+}
+
+.play-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(247, 210, 3, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, #ffed4e, #fff3a0);
+}
+
+.play-btn:active {
+  transform: translateY(0);
+}
+
+.play-icon {
+  font-size: 0.7rem;
+}
+
+/* Animierter Jackpot Counter */
+#jackpot-counter {
+  background: linear-gradient(45deg, #f7d203, #ffed4e, #f7d203);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: jackpotShine 3s infinite, jackpotPulse 2s infinite ease-in-out;
+}
+
+@keyframes jackpotShine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @media (max-width: 600px) {
   .slot-cards {
     gap: 1rem;

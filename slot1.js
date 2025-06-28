@@ -61,10 +61,27 @@ document.addEventListener('DOMContentLoaded', function() {
           mainContent.style.display = 'block';
           mainContent.classList.add('loaded');
           
+          // JETZT ist das Laden abgeschlossen
+          loadingComplete = true;
+          console.log('🎵 Ladevorgang ABGESCHLOSSEN - loadingComplete = true');
+          
           // Starte Pop-in Animationen nach dem Laden
           setTimeout(() => {
             startPopInAnimations();
-            playStartSound();
+            
+            // Prüfe ob bereits User-Interaktion stattgefunden hat
+            if (userInteracted && !musicStarted) {
+              console.log('🎵 User-Interaktion bereits erkannt - starte Audio-System JETZT');
+              startAudioSystem();
+              
+              // Remove ALL event listeners nach erfolgreichem Start
+              interactionEvents.forEach(eventType => {
+                document.removeEventListener(eventType, handleFirstInteraction);
+              });
+            } else {
+              // Versuche Auto-Play NACH dem Ladebildschirm
+              attemptAutoPlay();
+            }
           }, 200);
         }, 500);
       }, 500);
@@ -117,11 +134,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (betControl) betControl.classList.add('pop-in-bet-control');
   }
 
-  // Audio-System initialisieren
-  const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
-  startSound.volume = 0.2; // Lautstärke auf 60% setzen
+  // KOMPLETT ÜBERARBEITETES AUDIO-SYSTEM
+  // ==============================================
   
-  // Interaktives Musik-System mit Stems
+  // Audio-Objekte
+  const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
+  startSound.volume = 0.2;
+  
   const musicStems = {
     vocals: new Audio('data/sounds/Electro SwingStems/vocals.m4a'),
     bass: new Audio('data/sounds/Electro SwingStems/bass.m4a'),
@@ -131,25 +150,218 @@ document.addEventListener('DOMContentLoaded', function() {
     other: new Audio('data/sounds/Electro SwingStems/other.m4a')
   };
 
-  // Musik-Einstellungen
+  // ZENTRALE STEUERUNGSVARIABLEN
   let musicStarted = false;
+  let loadingComplete = false;
+  let userInteracted = false;
+  let autoPlayBlocked = false;
   let spinMusicTimeout = null;
   let isFadingOut = false;
   
-  // Alle Stems auf Loop setzen und Volumen initialisieren
+  // Stems konfigurieren
   Object.keys(musicStems).forEach(stemName => {
     const stem = musicStems[stemName];
     stem.loop = true;
     stem.volume = 0;
+    stem.preload = 'auto';
     
-    // Basis-Stems (vocals, bass, drums, piano) haben normale Lautstärke
     if (['vocals', 'bass', 'drums', 'piano'].includes(stemName)) {
-      stem.targetVolume = 0.15; // Etwas leiser als Start-Sound
+      stem.targetVolume = 0.15;
     } else {
-      // Guitar und Other starten stumm
       stem.targetVolume = 0.12;
     }
   });
+
+  // ZENTRALE AUDIO-START FUNKTION - NUR HIER WIRD MUSIK GESTARTET!
+  function startAudioSystem() {
+    // Doppel-Check: Nur starten wenn Laden abgeschlossen UND nicht bereits gestartet
+    if (!loadingComplete || musicStarted) {
+      console.log('🎵 Audio-Start blockiert - loadingComplete:', loadingComplete, 'musicStarted:', musicStarted);
+      return;
+    }
+    
+    console.log('🎵 STARTE AUDIO-SYSTEM JETZT!');
+    musicStarted = true;
+    
+    // Start-Sound abspielen
+    startSound.currentTime = 0;
+    const playPromise = startSound.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        console.log('✅ Start-Sound erfolgreich');
+        setTimeout(() => startInteractiveMusic(), 800);
+      }).catch(error => {
+        console.log('❌ Start-Sound blockiert, starte trotzdem Musik:', error);
+        startInteractiveMusic();
+      });
+    } else {
+      startInteractiveMusic();
+    }
+  }
+
+  // Prüfe ob bereits von Startseite navigiert wurde
+  function checkForPreviousInteraction() {
+    if (document.referrer && document.referrer.includes('index.html')) {
+      userInteracted = true;
+      console.log('Navigation von Startseite erkannt');
+      localStorage.setItem('slotGameAccessed', 'true');
+      return true;
+    }
+    
+    if (sessionStorage.getItem('slotGameNavigation') === 'true') {
+      userInteracted = true;
+      console.log('Slot-Game Navigation aus sessionStorage erkannt');
+      sessionStorage.removeItem('slotGameNavigation');
+      localStorage.setItem('slotGameAccessed', 'true');
+      return true;
+    }
+    
+    if (localStorage.getItem('slotGameAccessed') === 'true') {
+      userInteracted = true;
+      console.log('Slot-Game wurde bereits früher besucht');
+      return true;
+    }
+    
+    return false;
+  }
+
+  // NEUE VEREINFACHTE attemptAutoPlay FUNKTION
+  function attemptAutoPlay() {
+    // Nur versuchen wenn Laden abgeschlossen
+    if (!loadingComplete) {
+      console.log('🎵 attemptAutoPlay aufgerufen, aber Laden noch nicht abgeschlossen');
+      return;
+    }
+    
+    // Prüfe gespeicherte Musik-Präferenz
+    const musicPreference = localStorage.getItem('musicPreference');
+    if (musicPreference === 'disabled') {
+      console.log('🎵 Musik ist vom User deaktiviert - überspringe Auto-Play');
+      return;
+    }
+    
+    const hadPreviousInteraction = checkForPreviousInteraction();
+    
+    if (hadPreviousInteraction || userInteracted) {
+      console.log('🎵 User-Interaktion bekannt - starte Audio-System direkt');
+      startAudioSystem();
+      return;
+    }
+    
+    // Auto-Play Test
+    const testAudio = new Audio();
+    testAudio.volume = 0;
+    testAudio.muted = true;
+    
+    const playPromise = testAudio.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        autoPlayBlocked = false;
+        console.log('🎵 Auto-Play verfügbar - starte Audio');
+        testAudio.pause();
+        setTimeout(() => startAudioSystem(), 500);
+      }).catch(error => {
+        autoPlayBlocked = true;
+        console.log('🎵 Auto-Play blockiert - zeige Benachrichtigung');
+        showAutoPlayNotification();
+      });
+    } else {
+      showAutoPlayNotification();
+    }
+  }
+
+  // Auto-Play Benachrichtigung (vereinfacht)
+  function showAutoPlayNotification() {
+    const notification = document.createElement('div');
+    notification.id = 'autoplay-notification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #2e2e4f, #474772);
+      color: #f7d203;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 2px solid #f7d203;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1001;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    notification.innerHTML = `🎵 Klicken Sie hier, um Musik zu aktivieren`;
+
+    notification.addEventListener('click', () => {
+      userInteracted = true;
+      if (loadingComplete) {
+        startAudioSystem();
+      }
+      document.body.removeChild(notification);
+    });
+
+    document.body.appendChild(notification);
+
+    // Auto-remove nach 10 Sekunden
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 10000);
+  }
+
+  // Enhanced User-Interaktion Detection - KOMPLETT NEU
+  const interactionEvents = ['click', 'keydown', 'touchstart', 'mousedown', 'pointerdown'];
+  
+  function handleFirstInteraction(event) {
+    // Immer als User-Interaktion markieren
+    userInteracted = true;
+    autoPlayBlocked = false;
+    
+    console.log('🎵 USER-INTERAKTION ERKANNT - loadingComplete:', loadingComplete, 'musicStarted:', musicStarted);
+    
+    // Remove notification sofort
+    const notification = document.getElementById('autoplay-notification');
+    if (notification && document.body.contains(notification)) {
+      try {
+        document.body.removeChild(notification);
+      } catch(e) {}
+    }
+    
+    // NUR starten wenn Laden abgeschlossen UND noch nicht gestartet
+    if (loadingComplete && !musicStarted) {
+      console.log('🎵 Alles bereit - STARTE AUDIO-SYSTEM!');
+      startAudioSystem();
+      
+      // Remove ALL event listeners nach erfolgreichem Start
+      interactionEvents.forEach(eventType => {
+        document.removeEventListener(eventType, handleFirstInteraction);
+      });
+    } else if (!loadingComplete) {
+      console.log('🎵 Interaktion gespeichert - warte auf Ende des Ladens');
+    } else {
+      console.log('🎵 Musik läuft bereits');
+    }
+  }
+
+  // Funktion zum Aktivieren der Interaction Listeners (sofort beim Start)
+  function activateInteractionListeners() {
+    interactionEvents.forEach(event => {
+      document.addEventListener(event, handleFirstInteraction, { 
+        passive: false,
+        capture: true
+      });
+    });
+    
+    window.addEventListener('focus', handleFirstInteraction, { once: true });
+    console.log('🎵 Interaction Listeners SOFORT aktiviert');
+  }
+  
+  // Aktiviere Listeners SOFORT beim Seitenladen
+  activateInteractionListeners();
 
   // Smooth Fade-in/out Funktion
   function fadeAudio(audioElement, targetVolume, duration = 1000) {
@@ -157,11 +369,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const volumeDiff = targetVolume - startVolume;
     const startTime = Date.now();
     
+    if (targetVolume > 0 && audioElement.paused) {
+      audioElement.play().catch(error => {
+        console.log('Audio konnte nicht abgespielt werden:', error);
+      });
+    }
+    
     function updateVolume() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      // Smooth easing function
       const easeProgress = progress < 0.5 
         ? 2 * progress * progress 
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
@@ -172,8 +389,12 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(updateVolume);
       } else {
         audioElement.volume = targetVolume;
-        if (targetVolume === 0) {
-          audioElement.pause();
+        if (targetVolume === 0 && !isFadingOut) {
+          setTimeout(() => {
+            if (audioElement.volume === 0) {
+              audioElement.pause();
+            }
+          }, 100);
         }
       }
     }
@@ -181,31 +402,39 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(updateVolume);
   }
 
-  // Musik starten
+  // Interaktive Musik starten (NUR AUS startAudioSystem aufrufen!)
   function startInteractiveMusic() {
-    if (musicStarted) return;
+    console.log('🎵 Starte interaktive Musik...');
     
-    musicStarted = true;
-    
-    // Starte Basis-Stems (vocals, bass, drums, piano)
     ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
       const stem = musicStems[stemName];
       stem.currentTime = 0;
-      stem.play().catch(error => {
-        console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
-      });
-      // Fade-in über 2 Sekunden
-      fadeAudio(stem, stem.targetVolume, 2000);
+      stem.volume = 0;
+      
+      const playPromise = stem.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log(`✅ ${stemName} Stem gestartet`);
+          fadeAudio(stem, stem.targetVolume, 2000);
+        }).catch(error => {
+          console.error(`❌ ${stemName} Stem Fehler:`, error);
+        });
+      }
     });
     
-    // Guitar und Other starten auch, aber bleiben stumm
     ['guitar', 'other'].forEach(stemName => {
       const stem = musicStems[stemName];
       stem.currentTime = 0;
-      stem.play().catch(error => {
-        console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
-      });
-      // Bleiben bei 0 Volume
+      stem.volume = 0;
+      
+      const playPromise = stem.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log(`✅ ${stemName} Stem bereit (stumm)`);
+        }).catch(error => {
+          console.error(`❌ ${stemName} Stem Fehler:`, error);
+        });
+      }
     });
   }
 
@@ -213,6 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function activateSpinMusic() {
     if (!musicStarted) return;
     
+    // Stop any existing fade-out process
     isFadingOut = false;
     
     // Clear existing timeout
@@ -220,14 +450,26 @@ document.addEventListener('DOMContentLoaded', function() {
       clearTimeout(spinMusicTimeout);
     }
     
+    // Stelle sicher, dass Guitar und Other laufen (falls sie pausiert wurden)
+    if (musicStems.guitar.paused) {
+      musicStems.guitar.play().catch(error => {
+        console.log('Guitar Stem konnte nicht abgespielt werden:', error);
+      });
+    }
+    if (musicStems.other.paused) {
+      musicStems.other.play().catch(error => {
+        console.log('Other Stem konnte nicht abgespielt werden:', error);
+      });
+    }
+    
     // Fade-in Guitar und Other
     fadeAudio(musicStems.guitar, musicStems.guitar.targetVolume, 800);
     fadeAudio(musicStems.other, musicStems.other.targetVolume, 800);
     
-    // Nach 30 Sekunden ohne Spin, fade out
+    // Nach 20 Sekunden ohne Spin, fade out
     spinMusicTimeout = setTimeout(() => {
       deactivateSpinMusic();
-    }, 30000);
+    }, 20000);
   }
 
   // Spin-Musik deaktivieren (Guitar und Other stummen)
@@ -251,9 +493,15 @@ document.addEventListener('DOMContentLoaded', function() {
       clearTimeout(spinMusicTimeout);
     }
     
+    // Wenn Stems bereits stumm sind, aktiviere sie wieder
+    if (musicStems.guitar.volume === 0 || musicStems.other.volume === 0) {
+      activateSpinMusic();
+      return;
+    }
+    
     spinMusicTimeout = setTimeout(() => {
       deactivateSpinMusic();
-    }, 30000);
+    }, 20000);
   }
 
   // Musik komplett stoppen (falls benötigt)
@@ -271,31 +519,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
   }
   
-  // Start-Sound abspielen wenn die Seite geladen wird
-  function playStartSound() {
-    startSound.currentTime = 0; // Sound von Anfang an abspielen
-    startSound.play().catch(error => {
-      console.log('Start-Sound konnte nicht abgespielt werden:', error);
-      // Fallback: Versuche es nach User-Interaktion
-      document.addEventListener('click', function playOnFirstClick() {
-        startSound.play().catch(e => console.log('Sound-Wiedergabe fehlgeschlagen:', e));
-        // Starte auch die interaktive Musik nach User-Interaktion
-        startInteractiveMusic();
-        document.removeEventListener('click', playOnFirstClick);
-      }, { once: true });
-      return;
-    });
-    
-    // Starte interaktive Musik nach Start-Sound
-    setTimeout(() => {
-      startInteractiveMusic();
-    }, 1000);
-  }
-
+  // ===== ENDE DES AUDIO-SYSTEMS =====
+  
   let spinning = false;
   let fastStop = false;
   let spinTimeouts = [];
   let finishReelFns = [];
+  let finished = [false, false, false];
+  let reelFinalOffsets = [0, 0, 0];
   let autoSpinActive = false;
   let autoSpinInterval = null;
   let buttonPressed = false;
@@ -506,10 +737,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleSpin() {
     if (spinning && !fastStop) {
-      // Fast-Stop: Animationen sofort überspringen und Ergebnis direkt anzeigen
+      // Fast-Stop: Walzen schneller zum Stoppen bringen statt abrupt
       fastStop = true;
-      spinTimeouts.forEach(clearTimeout);
-      finishReelFns.forEach(fn => fn && fn());
+      accelerateReelsToStop();
       return;
     }
     if (spinning) return;
@@ -519,9 +749,54 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // NOTFALL-MUSIK-START: Falls die Musik noch nicht läuft, starte sie beim Spinnen
+    if (!musicStarted && loadingComplete) {
+      console.log('🎵 NOTFALL: Starte Basis-Stems beim Spinnen, da Musik noch nicht aktiv');
+      musicStarted = true;
+      
+      // Starte nur die Basis-Stems (vocals, bass, drums, piano)
+      ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
+        const stem = musicStems[stemName];
+        stem.currentTime = 0;
+        stem.volume = 0;
+        
+        const playPromise = stem.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log(`✅ Notfall-Start: ${stemName} Stem gestartet`);
+            fadeAudio(stem, stem.targetVolume, 1500);
+          }).catch(error => {
+            console.error(`❌ Notfall-Start: ${stemName} Stem Fehler:`, error);
+          });
+        }
+      });
+      
+      // Starte auch Guitar und Other stumm für spätere Aktivierung
+      ['guitar', 'other'].forEach(stemName => {
+        const stem = musicStems[stemName];
+        stem.currentTime = 0;
+        stem.volume = 0;
+        
+        const playPromise = stem.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log(`✅ Notfall-Start: ${stemName} Stem bereit (stumm)`);
+          }).catch(error => {
+            console.error(`❌ Notfall-Start: ${stemName} Stem Fehler:`, error);
+          });
+        }
+      });
+    }
+
     // Reset Spin-Musik Timer bei erneutem Spin
-    if (musicStarted && (musicStems.guitar.volume > 0 || musicStems.other.volume > 0)) {
-      resetSpinMusicTimer();
+    if (musicStarted) {
+      // Wenn Guitar/Other bereits laufen, verlängere nur den Timer
+      if (musicStems.guitar.volume > 0 || musicStems.other.volume > 0) {
+        resetSpinMusicTimer();
+      } else {
+        // Wenn sie nicht laufen, aktiviere sie
+        activateSpinMusic();
+      }
     }
 
     performSpin();
@@ -571,6 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
     fastStop = false;
     spinTimeouts = [];
     finishReelFns = [];
+    finished = [false, false, false];
+    reelFinalOffsets = [0, 0, 0];
     balance -= bet;
     updateBalance();
     resultEl.textContent = '';
@@ -597,8 +874,6 @@ document.addEventListener('DOMContentLoaded', function() {
         finalSymbols[r][i] = symbols[Math.floor(Math.random() * symbols.length)];
       }
     }
-    let finished = [false, false, false];
-    let reelFinalOffsets = [0, 0, 0]; // Speichere die finalen Offsets für jeden Reel
     
     function finishReel(idx) {
       if (finished[idx]) return;
@@ -851,10 +1126,20 @@ document.addEventListener('DOMContentLoaded', function() {
       
       resultEl.textContent = winMessage;
       
-      // Check for Big Win Popup (nur bei den großen Gewinnen)
-      if (result === '💎💎💎' || result === '🔔🔔🔔' || result === '🍀🍀🍀') {
+      // Check for Win Popup (basierend auf Gewinnhöhe)
+      if (win >= 50) { // Zeige Popup für alle größeren Gewinne
         setTimeout(() => {
-          showBigWinPopup('big', win, result);
+          let popupType = 'normal';
+          if (win >= 1000) {
+            popupType = 'jackpot';
+          } else if (win >= 500) {
+            popupType = 'mega';
+          } else if (win >= 100) {
+            popupType = 'big';
+          } else if (win >= 50) {
+            popupType = 'super';
+          }
+          showBigWinPopup(popupType, win, result);
         }, 500);
       }
     } else {
@@ -906,8 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const size = Math.random() * 2.2 + 1.2;
     drop.style.fontSize = size + 'rem';
     // Zufällige Animationsdauer (5-7s)
-    const duration = Math.random() * 2 + 5;
-    drop.style.animationDuration = duration + 's';
+    drop.style.animationDuration = (Math.random() * 2 + 5) + 's';
     // Leicht zufällige Verzögerung für flüssigen Effekt
     drop.style.animationDelay = (Math.random() * 0.7) + 's';
     // Zufällige Drehung
@@ -1237,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'test-spin-music':
         if (musicStarted) {
           activateSpinMusic();
-          alert('Spin-Musik (Guitar + Other) aktiviert für 30 Sekunden');
+          alert('Spin-Musik (Guitar + Other) aktiviert für 20 Sekunden');
         } else {
           alert('Bitte erst Musik starten!');
         }
@@ -1284,45 +1568,66 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
 
     // Determine win level and styling
-    let winLevel, titleText, titleColor, symbolsText, glowColor;
+    let titleText, titleColor, symbolsText, glowColor;
     
-    if (symbols === '💎💎💎') {
-      winLevel = 'big';
-      titleText = 'BIG WIN';
-      titleColor = '#00ffff';
-      symbolsText = '💎💎💎';
-      glowColor = 'cyan';
-    } else if (symbols === '🔔🔔🔔') {
-      winLevel = 'mega';
-      titleText = 'MEGA WIN';
+    if (winType === 'jackpot') {
+      titleText = 'SUPER MEGA WIN!';
+      titleColor = '#ff1493';
+      symbolsText = symbols;
+      glowColor = 'magenta';
+    } else if (winType === 'mega') {
+      titleText = 'MEGA WIN!';
       titleColor = '#ff6b6b';
-      symbolsText = '🔔🔔🔔';
+      symbolsText = symbols;  // Use actual winning symbols
       glowColor = 'red';
-    } else if (symbols === '🍀🍀🍀') {
-      winLevel = 'super';
-      titleText = 'SUPER MEGA WIN';
+    } else if (winType === 'big') {
+      titleText = 'BIG WIN!';
+      titleColor = '#00ffff';
+      symbolsText = symbols;  // Use actual winning symbols
+      glowColor = 'cyan';
+    } else if (winType === 'super') {
+      titleText = 'SUPER WIN!';
       titleColor = '#50fa7b';
-      symbolsText = '🍀🍀🍀';
+      symbolsText = symbols;  // Use actual winning symbols
       glowColor = 'lime';
+    } else {
+      titleText = 'GEWINN!';
+      titleColor = '#f7d203';
+      symbolsText = symbols;  // Use actual winning symbols
+      glowColor = 'gold';
     }
+
+    // Split title into words for individual pop-in animation
+    const titleWords = titleText.split(' ');
+    let titleHTML = '<div class="win-title-container" style="margin-bottom: 20px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px;">';
+    titleWords.forEach((word, index) => {
+      titleHTML += `
+        <span class="title-word" style="
+          font-size: 4rem;
+          font-weight: bold;
+          color: ${titleColor};
+          text-shadow: 
+            0 0 20px ${titleColor},
+            0 0 40px ${titleColor},
+            2px 2px 4px rgba(0,0,0,0.8);
+          font-family: Impact, Arial Black, sans-serif;
+          letter-spacing: 3px;
+          text-stroke: 2px #f7d203;
+          -webkit-text-stroke: 2px #f7d203;
+          animation: 
+            wordPopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+            titlePulse 1.5s infinite alternate ${0.6 + (index * 0.2)}s;
+          animation-delay: ${index * 0.2}s, ${0.6 + (index * 0.2)}s;
+          transform: scale(0) rotate(-180deg);
+          opacity: 0;
+        ">${word}</span>
+      `;
+    });
+    titleHTML += '</div>';
 
     popup.innerHTML = `
       <div class="sparkles-bg"></div>
-      <div class="win-title" style="
-        font-size: 4rem;
-        font-weight: bold;
-        color: ${titleColor};
-        text-shadow: 
-          0 0 20px ${titleColor},
-          0 0 40px ${titleColor},
-          2px 2px 4px rgba(0,0,0,0.8);
-        margin-bottom: 20px;
-        animation: titlePulse 1.5s infinite alternate;
-        font-family: Impact, Arial Black, sans-serif;
-        letter-spacing: 3px;
-        text-stroke: 2px #f7d203;
-        -webkit-text-stroke: 2px #f7d203;
-      ">${titleText}</div>
+      ${titleHTML}
       
       <div class="win-symbols" style="
         font-size: 5rem;
@@ -1331,7 +1636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filter: drop-shadow(0 0 10px ${glowColor});
       ">${symbolsText}</div>
       
-      <div class="win-amount" style="
+      <div class="win-amount" id="win-amount-display" style="
         font-size: 3.5rem;
         font-weight: bold;
         color: #f7d203;
@@ -1346,15 +1651,33 @@ document.addEventListener('DOMContentLoaded', function() {
         animation: amountShine 2s infinite;
         margin: 20px 0;
         font-family: Impact, Arial Black, sans-serif;
-      ">${amount.toLocaleString()}€</div>
+      ">0€</div>
       
-      <div class="continue-text" style="
-        color: #f2e9e4;
-        font-size: 1.2rem;
+      <button class="continue-button" style="
+        background: linear-gradient(135deg, #f7d203 0%, #ffed4e 50%, #f7d203 100%);
+        border: 3px solid #ffffff;
+        border-radius: 15px;
+        color: #2e2e4f;
+        font-size: 1.8rem;
+        font-weight: bold;
+        padding: 15px 40px;
         margin-top: 30px;
-        opacity: 0.8;
-        animation: continueFlash 2s infinite;
-      ">Klicken zum Fortfahren</div>
+        cursor: pointer;
+        box-shadow: 
+          0 6px 20px rgba(247, 210, 3, 0.4),
+          inset 0 2px 10px rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        animation: buttonPulse 2s infinite;
+        font-family: Arial, sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0;
+        transform: scale(0);
+        transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 25px rgba(247, 210, 3, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.4)'" 
+         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 6px 20px rgba(247, 210, 3, 0.4), inset 0 2px 10px rgba(255, 255, 255, 0.3)'">
+        WEITER
+      </button>
     `;
 
     // Add sparkles background
@@ -1441,6 +1764,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
+      @keyframes wordPopIn {
+        0% {
+          transform: scale(0) rotate(-180deg);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.2) rotate(-45deg);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1) rotate(0deg);
+          opacity: 1;
+        }
+      }
+      
       @keyframes symbolsBounce {
         0% { transform: translateY(0px) scale(1); }
         100% { transform: translateY(-10px) scale(1.1); }
@@ -1460,10 +1798,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
-      @keyframes continueFlash {
-        0%, 50% { opacity: 0.8; }
-        75% { opacity: 0.4; }
-        100% { opacity: 0.8; }
+      @keyframes buttonPulse {
+        0%, 100% { 
+          transform: scale(1);
+          box-shadow: 0 6px 20px rgba(247, 210, 3, 0.4), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+        }
+        50% { 
+          transform: scale(1.03);
+          box-shadow: 0 8px 25px rgba(247, 210, 3, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.4);
+        }
+      }
+      
+      @keyframes amountFinalPulse {
+        0% { 
+          transform: scale(1);
+        }
+        50% { 
+          transform: scale(1.1);
+        }
+        100% { 
+          transform: scale(1);
+        }
       }
       
       @keyframes sparkleFloat {
@@ -1493,21 +1848,104 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(popupStyles);
 
-    // Close popup on click
-    overlay.addEventListener('click', () => {
+    // Function to close popup
+    function closePopup() {
       overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
       setTimeout(() => {
-        document.body.removeChild(overlay);
-        document.head.removeChild(popupStyles);
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+        if (document.head.contains(popupStyles)) {
+          document.head.removeChild(popupStyles);
+        }
       }, 300);
+    }
+
+    // Variables for counting animation
+    let countingComplete = false;
+    let countingSkipped = false;
+    let countingInterval = null;
+    
+    // Get references to elements
+    const winAmountDisplay = popup.querySelector('#win-amount-display');
+    const continueButton = popup.querySelector('.continue-button');
+    
+    // Start counting animation after a short delay
+    setTimeout(() => {
+      startCountingAnimation();
+    }, 1000); // Wait 1 second after popup appears
+
+    function startCountingAnimation() {
+      const startTime = Date.now();
+      const duration = Math.min(3000, Math.max(1500, amount * 2)); // Duration based on amount, between 1.5s and 3s
+      let currentAmount = 0;
+      
+      function updateCount() {
+        if (countingSkipped) {
+          currentAmount = amount;
+          winAmountDisplay.textContent = amount.toLocaleString() + '€';
+          finishCounting();
+          return;
+        }
+        
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease out function for smooth deceleration
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        currentAmount = Math.floor(amount * easeProgress);
+        
+        winAmountDisplay.textContent = currentAmount.toLocaleString() + '€';
+        
+        if (progress < 1) {
+          countingInterval = requestAnimationFrame(updateCount);
+        } else {
+          currentAmount = amount;
+          winAmountDisplay.textContent = amount.toLocaleString() + '€';
+          finishCounting();
+        }
+      }
+      
+      countingInterval = requestAnimationFrame(updateCount);
+    }
+    
+    function finishCounting() {
+      countingComplete = true;
+      
+      // Show the continue button with animation
+      continueButton.style.opacity = '1';
+      continueButton.style.transform = 'scale(1)';
+      
+      // Add extra visual feedback
+      winAmountDisplay.style.animation = 'amountShine 2s infinite, amountFinalPulse 0.5s ease-out';
+    }
+    
+    function skipCounting() {
+      if (!countingComplete && !countingSkipped) {
+        countingSkipped = true;
+        if (countingInterval) {
+          cancelAnimationFrame(countingInterval);
+        }
+      }
+    }
+
+    // Allow skipping by clicking anywhere on the popup during counting
+    popup.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!countingComplete) {
+        skipCounting();
+      }
     });
 
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (document.body.contains(overlay)) {
-        overlay.click();
+    // Close popup only when "weiter" button is clicked AND counting is complete
+    continueButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (countingComplete || countingSkipped) {
+        closePopup();
+      } else {
+        skipCounting();
       }
-    }, 5000);
+    });
   }
 
   // Initialize dev menu
@@ -1555,4 +1993,97 @@ document.addEventListener('DOMContentLoaded', function() {
       autoSpinTriggered = false;
     }
   });
+
+  // 🚨 EMERGENCY MUSIC STARTER - GARANTIERT DASS MUSIK BEI KLICK STARTET
+  document.addEventListener('click', function emergencyMusicStarter(event) {
+    if (!musicStarted) {
+      console.log('🚨 EMERGENCY MUSIC START bei Klick!');
+      userInteracted = true;
+      autoPlayBlocked = false;
+      
+      // Remove notification
+      const notification = document.getElementById('autoplay-notification');
+      if (notification && document.body.contains(notification)) {
+        try {
+          document.body.removeChild(notification);
+        } catch(e) {}
+      }
+      
+      playStartSound();
+      
+      // Remove sich selbst nach erfolgreichem Start
+      document.removeEventListener('click', emergencyMusicStarter);
+    }
+  }, { capture: true }); // Capture phase für höchste Priorität
+
+  // Walzen mit aktuellen Symbolen früher stoppen lassen
+  function accelerateReelsToStop() {
+    // Gehe durch alle aktiven Walzen und stoppe sie früher
+    strips.forEach((strip, idx) => {
+      if (!finished[idx]) {
+        // Berechne aktuelle Position
+        const currentTransform = strip.style.transform;
+        const currentMatch = currentTransform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+        
+        if (currentMatch) {
+          const currentY = parseFloat(currentMatch[1]);
+          const symbolHeight = 70;
+          
+          // Bestimme welche 3 Symbole gerade sichtbar sind
+          const allSymbols = Array.from(strip.children).map(el => el.textContent);
+          const symbolIndex = Math.abs(Math.round(currentY / symbolHeight));
+          
+          // Nimm die aktuell sichtbaren 3 Symbole als finale Symbole
+          const visibleSymbols = [];
+          for (let i = 0; i < 3; i++) {
+            const idx = symbolIndex + i;
+            if (idx < allSymbols.length) {
+              visibleSymbols[i] = allSymbols[idx];
+            } else {
+              // Fallback falls Index außerhalb
+              visibleSymbols[i] = symbols[Math.floor(Math.random() * symbols.length)];
+            }
+          }
+          
+          // Zufällige finale Position mit kleinem Offset
+          let finalOffset = 0;
+          if (Math.random() < 0.3) {
+            finalOffset = (Math.random() - 0.5) * 40; // Variation für natürliches Aussehen
+          }
+          reelFinalOffsets[idx] = finalOffset;
+          
+          // Zufällige Stopp-Zeit (200-800ms) für Unvorhersagbarkeit
+          const randomStopTime = Math.floor(Math.random() * 600) + 200;
+          
+          // Sanfte Animation zur aktuellen Position + kleiner Offset
+          strip.style.transition = `transform ${randomStopTime}ms cubic-bezier(0.4, 0.0, 0.2, 1)`;
+          const finalY = currentY + finalOffset;
+          strip.style.transform = `translateY(${finalY}px)`;
+          
+          // Nach der Animation: Strip mit den sichtbaren Symbolen neu aufbauen
+          setTimeout(() => {
+            // Strip mit aktuell sichtbaren Symbolen neu aufbauen
+            strip.style.transition = 'none';
+            strip.innerHTML = '';
+            visibleSymbols.forEach(sym => {
+              const el = document.createElement('div');
+              el.className = 'reel-symbol';
+              el.textContent = sym;
+              strip.appendChild(el);
+            });
+            
+            // Finale Position setzen
+            strip.style.transform = `translateY(${finalOffset}px)`;
+            
+            // Als beendet markieren
+            if (finishReelFns[idx]) {
+              finishReelFns[idx]();
+            }
+          }, randomStopTime);
+        }
+      }
+    }, 100);
+  }
+
+  // ...existing code...
 });
