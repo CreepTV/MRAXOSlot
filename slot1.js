@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let spinMusicTimeout = null;
   let isFadingOut = false;
   
-  // Stems konfigurieren
+  // Stems konfigurieren - VEREINFACHT
   Object.keys(musicStems).forEach(stemName => {
     const stem = musicStems[stemName];
     stem.loop = true;
@@ -172,15 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ZENTRALE AUDIO-START FUNKTION - NUR HIER WIRD MUSIK GESTARTET!
+  // ZENTRALE AUDIO-START FUNKTION - VEREINFACHT
   function startAudioSystem() {
-    // Doppel-Check: Nur starten wenn Laden abgeschlossen UND nicht bereits gestartet
     if (!loadingComplete || musicStarted) {
       console.log('🎵 Audio-Start blockiert - loadingComplete:', loadingComplete, 'musicStarted:', musicStarted);
       return;
     }
     
-    console.log('🎵 STARTE AUDIO-SYSTEM JETZT!');
+    console.log('🎵 STARTE AUDIO-SYSTEM!');
     musicStarted = true;
     
     // Start-Sound abspielen
@@ -363,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Aktiviere Listeners SOFORT beim Seitenladen
   activateInteractionListeners();
 
-  // Smooth Fade-in/out Funktion
+  // Einfache Fade-in/out Funktion
   function fadeAudio(audioElement, targetVolume, duration = 1000) {
     const startVolume = audioElement.volume;
     const volumeDiff = targetVolume - startVolume;
@@ -389,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(updateVolume);
       } else {
         audioElement.volume = targetVolume;
-        if (targetVolume === 0 && !isFadingOut) {
+        if (targetVolume === 0) {
           setTimeout(() => {
             if (audioElement.volume === 0) {
               audioElement.pause();
@@ -402,83 +401,86 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(updateVolume);
   }
 
-  // Interaktive Musik starten (NUR AUS startAudioSystem aufrufen!)
+  // Einfache Musik-Start-Funktion
   function startInteractiveMusic() {
     console.log('🎵 Starte interaktive Musik...');
     
-    ['vocals', 'bass', 'drums', 'piano'].forEach(stemName => {
+    ['vocals', 'bass', 'drums', 'piano'].forEach((stemName, index) => {
       const stem = musicStems[stemName];
       stem.currentTime = 0;
       stem.volume = 0;
       
-      const playPromise = stem.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log(`✅ ${stemName} Stem gestartet`);
-          fadeAudio(stem, stem.targetVolume, 2000);
-        }).catch(error => {
-          console.error(`❌ ${stemName} Stem Fehler:`, error);
-        });
-      }
+      setTimeout(() => {
+        const playPromise = stem.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log(`✅ ${stemName} Stem gestartet`);
+            fadeAudio(stem, stem.targetVolume, 2000);
+          }).catch(error => {
+            console.error(`❌ ${stemName} Stem Fehler:`, error);
+          });
+        }
+      }, index * 300); // Gestaffelt starten
     });
     
-    ['guitar', 'other'].forEach(stemName => {
+    // Guitar und Other stumm starten
+    ['guitar', 'other'].forEach((stemName, index) => {
       const stem = musicStems[stemName];
       stem.currentTime = 0;
       stem.volume = 0;
       
-      const playPromise = stem.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log(`✅ ${stemName} Stem bereit (stumm)`);
-        }).catch(error => {
-          console.error(`❌ ${stemName} Stem Fehler:`, error);
-        });
-      }
+      setTimeout(() => {
+        const playPromise = stem.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log(`✅ ${stemName} Stem bereit (stumm)`);
+          }).catch(error => {
+            console.error(`❌ ${stemName} Stem Fehler:`, error);
+          });
+        }
+      }, 1000 + (index * 200));
     });
   }
 
-  // Spin-Musik aktivieren (Guitar und Other entstummen)
+  // Einfache Spin-Musik aktivieren
   function activateSpinMusic() {
     if (!musicStarted) return;
     
-    // Stop any existing fade-out process
+    console.log('🎵 Aktiviere Spin-Musik...');
+    
     isFadingOut = false;
     
-    // Clear existing timeout
     if (spinMusicTimeout) {
       clearTimeout(spinMusicTimeout);
     }
     
-    // Stelle sicher, dass Guitar und Other laufen (falls sie pausiert wurden)
-    if (musicStems.guitar.paused) {
-      musicStems.guitar.play().catch(error => {
-        console.log('Guitar Stem konnte nicht abgespielt werden:', error);
-      });
-    }
-    if (musicStems.other.paused) {
-      musicStems.other.play().catch(error => {
-        console.log('Other Stem konnte nicht abgespielt werden:', error);
-      });
-    }
+    // Guitar und Other aktivieren
+    ['guitar', 'other'].forEach(stemName => {
+      const stem = musicStems[stemName];
+      
+      if (stem.paused) {
+        stem.play().catch(error => {
+          console.log(`${stemName} Stem konnte nicht abgespielt werden:`, error);
+        });
+      }
+      
+      fadeAudio(stem, stem.targetVolume, 1000);
+    });
     
-    // Fade-in Guitar und Other
-    fadeAudio(musicStems.guitar, musicStems.guitar.targetVolume, 800);
-    fadeAudio(musicStems.other, musicStems.other.targetVolume, 800);
-    
-    // Nach 20 Sekunden ohne Spin, fade out
+    // Nach 20 Sekunden deaktivieren
     spinMusicTimeout = setTimeout(() => {
       deactivateSpinMusic();
     }, 20000);
   }
 
-  // Spin-Musik deaktivieren (Guitar und Other stummen)
+  // Einfache Spin-Musik deaktivieren
   function deactivateSpinMusic() {
     if (!musicStarted || isFadingOut) return;
     
+    console.log('🎵 Deaktiviere Spin-Musik...');
+    
     isFadingOut = true;
     
-    // Langsamerer Fade-out für Guitar und Other
     fadeAudio(musicStems.guitar, 0, 2000);
     fadeAudio(musicStems.other, 0, 2000);
     
@@ -487,13 +489,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 2000);
   }
 
-  // Reset Spin-Musik Timer (bei erneutem Spin)
+  // Einfacher Timer-Reset
   function resetSpinMusicTimer() {
     if (spinMusicTimeout) {
       clearTimeout(spinMusicTimeout);
     }
     
-    // Wenn Stems bereits stumm sind, aktiviere sie wieder
     if (musicStems.guitar.volume === 0 || musicStems.other.volume === 0) {
       activateSpinMusic();
       return;
@@ -504,10 +505,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 20000);
   }
 
-  // Musik komplett stoppen (falls benötigt)
+  // Einfacher Musik-Stop
   function stopAllMusic() {
-    Object.values(musicStems).forEach(stem => {
-      fadeAudio(stem, 0, 1000);
+    console.log('🎵 Stoppe alle Musik...');
+    
+    Object.values(musicStems).forEach((stem, index) => {
+      setTimeout(() => {
+        fadeAudio(stem, 0, 1000);
+      }, index * 100);
     });
     
     setTimeout(() => {
@@ -1506,7 +1511,6 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('slot1_balance', balance);
         break;
       case 'fast-spin':
-        // Toggle between normal and fast spin timings
         alert('Fast Spin Mode aktiviert! (Bereits implementiert für Dev-Wins)');
         break;
       case 'toggle-music':
@@ -1948,142 +1952,116 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Initialize dev menu
-  createDevMenu();
-
-  // Leertasten-Funktionalität hinzufügen
-  let spaceKeyTimer = null;
-  let spaceKeyPressed = false;
-  let autoSpinTriggered = false;
-
-  document.addEventListener('keydown', function(event) {
-    if ((event.code === 'Space' || event.key === ' ') && !spaceKeyPressed) {
-      event.preventDefault();
-      spaceKeyPressed = true;
-      autoSpinTriggered = false;
-      
-      if (autoSpinActive) {
-        stopAutoSpin();
-        return;
-      }
-      
-      // Starte Timer für Long Press AutoSpin
-      spaceKeyTimer = setTimeout(() => {
-        autoSpinTriggered = true;
-        startAutoSpin();
-      }, 800); // 800ms für Long Press
-    }
-  });
-
-  document.addEventListener('keyup', function(event) {
-    if (event.code === 'Space' || event.key === ' ') {
-      event.preventDefault();
-      
-      if (spaceKeyTimer) {
-        clearTimeout(spaceKeyTimer);
-        spaceKeyTimer = null;
-      }
-      
-      // Nur wenn es kein Long Press war und kein AutoSpin läuft
-      if (spaceKeyPressed && !autoSpinTriggered && !autoSpinActive) {
-        handleSpin();
-      }
-      
-      spaceKeyPressed = false;
-      autoSpinTriggered = false;
-    }
-  });
-
-  // 🚨 EMERGENCY MUSIC STARTER - GARANTIERT DASS MUSIK BEI KLICK STARTET
-  document.addEventListener('click', function emergencyMusicStarter(event) {
+  // ===== ERWEITERTE AUDIO-DEBUG-FUNKTIONEN =====
+  
+  // Console-Logging für detaillierte Sync-Informationen
+  function logDetailedSyncInfo() {
     if (!musicStarted) {
-      console.log('🚨 EMERGENCY MUSIC START bei Klick!');
-      userInteracted = true;
-      autoPlayBlocked = false;
-      
-      // Remove notification
-      const notification = document.getElementById('autoplay-notification');
-      if (notification && document.body.contains(notification)) {
-        try {
-          document.body.removeChild(notification);
-        } catch(e) {}
-      }
-      
-      playStartSound();
-      
-      // Remove sich selbst nach erfolgreichem Start
-      document.removeEventListener('click', emergencyMusicStarter);
+      console.log('🎵 Musik nicht gestartet - keine Sync-Infos verfügbar');
+      return;
     }
-  }, { capture: true }); // Capture phase für höchste Priorität
-
-  // Walzen mit aktuellen Symbolen früher stoppen lassen
-  function accelerateReelsToStop() {
-    // Gehe durch alle aktiven Walzen und stoppe sie früher
-    strips.forEach((strip, idx) => {
-      if (!finished[idx]) {
-        // Berechne aktuelle Position
-        const currentTransform = strip.style.transform;
-        const currentMatch = currentTransform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
-        
-        if (currentMatch) {
-          const currentY = parseFloat(currentMatch[1]);
-          const symbolHeight = 70;
+    
+    console.group('🎵 Detaillierte Synchronisierung-Informationen');
+    
+    Object.entries(musicStems).forEach(([name, stem]) => {
+      const info = {
+        name: name,
+        playing: !stem.paused,
+        currentTime: stem.currentTime.toFixed(3) + 's',
+        volume: stem.volume.toFixed(3),
+        targetVolume: stem.targetVolume,
+        fadeState: stem._fadeState,
+        isPlaying: stem._isPlaying,
+        syncOffset: stem._syncOffset?.toFixed(3) + 's' || '0s',
+        lastSync: stem._lastSyncCheck ? new Date(stem._lastSyncCheck).toLocaleTimeString() : 'Nie'
+      };
+      
+      console.log(`🎼 ${name.toUpperCase()}:`, info);
+    });
+    
+    const status = getSyncStatus();
+    if (typeof status === 'object') {
+      console.log('📊 Sync-Status:', status);
+    }
+    
+    console.log('⚙️ System-Status:', {
+      musicStarted,
+      stemsSynced,
+      beatSyncEnabled,
+      resyncAttempts,
+      isFadingOut,
+      syncMonitoringActive: !!syncCheckInterval
+    });
+    
+    console.groupEnd();
+  }
+  
+  // Kontinuierliches Sync-Monitoring mit detailliertem Logging
+  function enableVerboseSyncLogging() {
+    const verboseInterval = setInterval(() => {
+      if (musicStarted) {
+        const playingStems = Object.values(musicStems).filter(stem => !stem.paused);
+        if (playingStems.length > 1) {
+          const times = playingStems.map(stem => stem.currentTime);
+          const maxDiff = Math.max(...times) - Math.min(...times);
           
-          // Bestimme welche 3 Symbole gerade sichtbar sind
-          const allSymbols = Array.from(strip.children).map(el => el.textContent);
-          const symbolIndex = Math.abs(Math.round(currentY / symbolHeight));
-          
-          // Nimm die aktuell sichtbaren 3 Symbole als finale Symbole
-          const visibleSymbols = [];
-          for (let i = 0; i < 3; i++) {
-            const idx = symbolIndex + i;
-            if (idx < allSymbols.length) {
-              visibleSymbols[i] = allSymbols[idx];
-            } else {
-              // Fallback falls Index außerhalb
-              visibleSymbols[i] = symbols[Math.floor(Math.random() * symbols.length)];
-            }
-          }
-          
-          // Zufällige finale Position mit kleinem Offset
-          let finalOffset = 0;
-          if (Math.random() < 0.3) {
-            finalOffset = (Math.random() - 0.5) * 40; // Variation für natürliches Aussehen
-          }
-          reelFinalOffsets[idx] = finalOffset;
-          
-          // Zufällige Stopp-Zeit (200-800ms) für Unvorhersagbarkeit
-          const randomStopTime = Math.floor(Math.random() * 600) + 200;
-          
-          // Sanfte Animation zur aktuellen Position + kleiner Offset
-          strip.style.transition = `transform ${randomStopTime}ms cubic-bezier(0.4, 0.0, 0.2, 1)`;
-          const finalY = currentY + finalOffset;
-          strip.style.transform = `translateY(${finalY}px)`;
-          
-          // Nach der Animation: Strip mit den sichtbaren Symbolen neu aufbauen
-          setTimeout(() => {
-            // Strip mit aktuell sichtbaren Symbolen neu aufbauen
-            strip.style.transition = 'none';
-            strip.innerHTML = '';
-            visibleSymbols.forEach(sym => {
-              const el = document.createElement('div');
-              el.className = 'reel-symbol';
-              el.textContent = sym;
-              strip.appendChild(el);
+          if (maxDiff > 0.05) { // Log nur bei Abweichungen > 50ms
+            console.warn(`🎵 Sync-Abweichung: ${maxDiff.toFixed(3)}s zwischen Stems`);
+            
+            playingStems.forEach((stem, index) => {
+              const stemName = Object.keys(musicStems).find(key => musicStems[key] === stem);
+              console.log(`  ${stemName}: ${stem.currentTime.toFixed(3)}s`);
             });
-            
-            // Finale Position setzen
-            strip.style.transform = `translateY(${finalOffset}px)`;
-            
-            // Als beendet markieren
-            if (finishReelFns[idx]) {
-              finishReelFns[idx]();
-            }
-          }, randomStopTime);
+          }
         }
       }
-    }, 100);
+    }, 5000); // Alle 5 Sekunden prüfen
+    
+    console.log('🎵 Verbose Sync-Logging aktiviert');
+    return verboseInterval;
   }
+  
+  // Globale Debug-Funktionen für Browser-Console
+  window.audioDebug = {
+    getSyncStatus: getSyncStatus,
+    logDetailedInfo: logDetailedSyncInfo,
+    forceSync: performSilentBeatSync,
+    forceCrossfadeSync: performBeatSync,
+    synchronizeNow: synchronizeStems,
+    enableVerboseLogging: enableVerboseSyncLogging,
+    stopAllMusic: stopAllMusic,
+    startMusic: () => {
+      if (!musicStarted && loadingComplete) {
+        startAudioSystem();
+      } else {
+        console.log('🎵 Musik bereits gestartet oder Laden nicht abgeschlossen');
+      }
+    },
+    testDrift: (amount = 0.1) => {
+      const stems = Object.values(musicStems).filter(stem => !stem.paused);
+      if (stems.length > 1) {
+        stems[1].currentTime += amount;
+        console.log(`🎵 Sanfter Sync-Drift von ${amount}s simuliert`);
+      }
+    },
+    testCrossfade: () => {
+      const stems = Object.values(musicStems).filter(stem => !stem.paused);
+      if (stems.length > 0) {
+        const bpm = 127;
+        const beatDuration = 60 / bpm;
+        const nextBeat = Math.ceil(stems[0].currentTime / beatDuration) * beatDuration;
+        performCrossfadeSync(stems[0], nextBeat);
+        console.log('🎵 Crossfade-Test durchgeführt');
+      }
+    },
+    enableSilentMode: () => {
+      console.log('🎵 Alle zukünftigen Synchronisierungen werden unhörbar durchgeführt');
+      window._forceSilentSync = true;
+    }
+  };
+  
+  console.log('🎵 Audio-Debug-Funktionen verfügbar unter window.audioDebug');
+  console.log('🎵 Beispiel: audioDebug.getSyncStatus() oder audioDebug.logDetailedInfo()');
 
-  // ...existing code...
+  // ===== ENDE DER AUDIO-DEBUG-FUNKTIONEN =====
 });
