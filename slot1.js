@@ -1127,7 +1127,7 @@ document.addEventListener('DOMContentLoaded', function() {
       let emojiState = 'win';
       
       if (win >= 1000) {
-        winMessage = `🎉 JACKPOT! +${win}€ (${winDescription})`;
+        winMessage = `🎉 Super Mega Win! +${win}€ (${winDescription})`;
         emojiState = 'jackpot';
       } else if (win >= 500) {
         winMessage = `🔥 MEGA WIN! +${win}€ (${winDescription})`;
@@ -1699,4 +1699,1042 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('🎵 Beispiel: audioDebug.getSyncStatus() oder audioDebug.logDetailedInfo()');
 
   // ===== ENDE DER AUDIO-DEBUG-FUNKTIONEN =====
+
+  // ===== PREMIUM GEWINN-POPUP SYSTEM =====
+  
+  // ===== KONFIGURATION FÜR WORT-ANIMATIONEN =====
+  const TITLE_ANIMATION_CONFIG = {
+    // Basis-Verzögerung zwischen Wörtern (in Millisekunden)
+    // Niedrigere Werte = schneller, höhere Werte = langsamer
+    wordDelay: {
+      'jackpot': 100,    // Sehr schnell für maximalen Impact
+      'mega': 120,       // Schnell
+      'big': 150,        // Normal
+      'super': 150,      // Normal
+      'normal': 180      // Etwas langsamer
+    },
+    
+    // Dauer der einzelnen Wort-Animation (in Millisekunden)
+    wordDuration: 600,   // Wie lange jedes Wort zum Pop-In braucht
+    
+    // Wann andere Elemente erscheinen sollen (in Millisekunden ab Popup-Start)
+    multiplierDelay: 800,    // Multiplikator erscheint nach X ms
+    counterStartDelay: 1200  // Geld-Counter startet nach X ms
+  };
+  
+  /* 
+  ===== ANPASSUNGS-HILFE =====
+  
+  Um die Wort-Geschwindigkeit zu ändern, bearbeite die wordDelay Werte:
+  - Für schnellere Animationen: Werte verkleinern (z.B. 80ms)
+  - Für langsamere Animationen: Werte vergrößern (z.B. 250ms)
+  
+  Beispiele:
+  - Sehr schnell (Action-Style): 80-100ms
+  - Schnell (Standard-Casino): 120-150ms  
+  - Normal (Lesbar): 150-200ms
+  - Langsam (Dramatisch): 250-400ms
+  
+  Andere Timing-Anpassungen:
+  - wordDuration: Wie "bouncy" das einzelne Wort ist
+  - multiplierDelay: Wann der Multiplikator erscheint
+  - counterStartDelay: Wann das Geld anfängt zu zählen
+  */
+  // ===== ENDE KONFIGURATION =====
+  
+  function showBigWinPopup(type, winAmount, combination) {
+    // Entferne vorhandene Popups
+    const existingPopup = document.querySelector('.big-win-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+
+    // Sound-Effekt für Popup (falls verfügbar)
+    playWinSound(type);
+
+    // Popup Container
+    const popup = document.createElement('div');
+    popup.className = 'big-win-popup';
+    
+    // Hole Animations-Timing für diesen Gewinn-Typ (mit Fallback)
+    let currentWordDelay = 150; // Standard-Fallback
+    try {
+      currentWordDelay = TITLE_ANIMATION_CONFIG.wordDelay[type] || TITLE_ANIMATION_CONFIG.wordDelay.normal || 150;
+    } catch (e) {
+      console.warn('Animation config fehlt, verwende Standard-Werte');
+    }
+    
+    // Bestimme Popup-Styling basierend auf Gewinn-Typ
+    let popupConfig = {
+      title: '',
+      subtitle: '',
+      bgGradient: '',
+      borderColor: '',
+      titleColor: '',
+      titleGlow: '',
+      animation: '',
+      particles: '',
+      multiplier: '',
+      duration: 8000
+    };
+
+    // Berechne Multiplikator
+    const multiplier = Math.round(winAmount / (bet / 10));
+
+    switch(type) {
+      case 'jackpot':
+        popupConfig = {
+          title: 'Super Mega Win!',
+          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
+          bgGradient: 'linear-gradient(45deg, #FFD700 0%, #FFA500 25%, #FF6B35 50%, #FFD700 75%, #FFA500 100%)',
+          borderColor: '#FFD700',
+          titleColor: '#1a1a1a',
+          titleGlow: '0 0 40px #FFD700, 0 0 80px #FFD700, 0 0 120px #FFD700',
+          animation: 'jackpot-mega-pulse',
+          particles: '💎👑✨🎊🌟💰🔥💫⭐',
+          multiplier: `${multiplier}x MULTIPLIER!`,
+          duration: 12000
+        };
+        break;
+      case 'mega':
+        popupConfig = {
+          title: 'MEGA WIN!',
+          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
+          bgGradient: 'linear-gradient(45deg, #FF6B35 0%, #F7931E 25%, #FFD700 50%, #FF6B35 75%, #F7931E 100%)',
+          borderColor: '#FF6B35',
+          titleColor: '#FFFFFF',
+          titleGlow: '0 0 30px #FF6B35, 0 0 60px #FF6B35, 0 0 90px #FF6B35',
+          animation: 'mega-explosive',
+          particles: '🔥⚡💥🌟🎆💫🎊✨⭐🎉',
+          multiplier: `${multiplier}x MEGA!`,
+          duration: 10000
+        };
+        break;
+      case 'big':
+        popupConfig = {
+          title: 'BIG WIN!',
+          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
+          bgGradient: 'linear-gradient(45deg, #9B59B6 0%, #E74C3C 25%, #F39C12 50%, #9B59B6 75%, #E74C3C 100%)',
+          borderColor: '#9B59B6',
+          titleColor: '#FFFFFF',
+          titleGlow: '0 0 25px #9B59B6, 0 0 50px #9B59B6, 0 0 75px #9B59B6',
+          animation: 'big-spectacular',
+          particles: '⭐🎊🎈💫🌈✨💜❤️💛🎯',
+          multiplier: `${multiplier}x BIG!`,
+          duration: 8000
+        };
+        break;
+      case 'super':
+        popupConfig = {
+          title: 'SUPER WIN!',
+          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
+          bgGradient: 'linear-gradient(45deg, #3498DB 0%, #9B59B6 25%, #E74C3C 50%, #3498DB 75%, #9B59B6 100%)',
+          borderColor: '#3498DB',
+          titleColor: '#FFFFFF',
+          titleGlow: '0 0 20px #3498DB, 0 0 40px #3498DB, 0 0 60px #3498DB',
+          animation: 'super-celebration',
+          particles: '🎉🎈🎀🎁💝🎯🎊⭐💙💜',
+          multiplier: `${multiplier}x SUPER!`,
+          duration: 7000
+        };
+        break;
+      default:
+        popupConfig = {
+          title: 'GEWINN!',
+          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
+          bgGradient: 'linear-gradient(45deg, #2ECC71 0%, #3498DB 25%, #9B59B6 50%, #2ECC71 75%, #3498DB 100%)',
+          borderColor: '#2ECC71',
+          titleColor: '#FFFFFF',
+          titleGlow: '0 0 15px #2ECC71, 0 0 30px #2ECC71, 0 0 45px #2ECC71',
+          animation: 'normal-celebration',
+          particles: '🎉🎊⭐💚💙💜🌟✨🎈🎀',
+          multiplier: `${multiplier}x WIN!`,
+          duration: 6000
+        };
+    }
+
+    popup.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, 
+        rgba(0,0,0,0.95) 0%, 
+        rgba(10,10,30,0.98) 40%, 
+        rgba(0,0,0,0.99) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      backdrop-filter: blur(12px) saturate(1.5);
+      animation: popup-dramatic-appear 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      overflow: hidden;
+    `;
+
+    // Popup Content mit erweiterten Features
+    const content = document.createElement('div');
+    content.className = 'popup-content';
+    content.style.cssText = `
+      background: ${popupConfig.bgGradient};
+      background-size: 300% 300%;
+      border: 6px solid ${popupConfig.borderColor};
+      border-radius: 30px;
+      padding: 60px 80px;
+      text-align: center;
+      box-shadow: 
+        0 40px 120px rgba(0,0,0,0.8), 
+        0 0 200px ${popupConfig.borderColor}60,
+        0 0 80px ${popupConfig.borderColor}40,
+        inset 0 0 80px rgba(255,255,255,0.15),
+        inset 0 0 40px rgba(255,255,255,0.1);
+      animation: ${popupConfig.animation} 3s infinite, gradient-shift 3s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
+      max-width: 90vw;
+      max-height: 90vh;
+      min-width: 450px;
+      transform-style: preserve-3d;
+      background-attachment: fixed;
+      filter: drop-shadow(0 0 50px ${popupConfig.borderColor}40);
+    `;
+
+    // Hintergrund-Glanz-Effekt
+    const glowEffect = document.createElement('div');
+    glowEffect.style.cssText = `
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+      animation: glow-rotate 6s linear infinite;
+      pointer-events: none;
+    `;
+
+    // Titel mit verbesserter Typografie und Wort-für-Wort Animation
+    const title = document.createElement('h1');
+    title.style.cssText = `
+      font-size: 5.5rem;
+      font-weight: 900;
+      margin: 0 0 20px 0;
+      font-family: 'Impact', 'Arial Black', 'Segoe UI', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+    `;
+
+    // Titel-Wörter SOFORT beim Popup-Start animieren
+    const titleWords = popupConfig.title.split(' ');
+    titleWords.forEach((word, index) => {
+      const wordSpan = document.createElement('span');
+      wordSpan.textContent = word;
+      wordSpan.style.cssText = `
+        display: inline-block;
+        color: #FFFFFF;
+        text-shadow: 
+          0 0 10px rgba(255,255,255,0.8),
+          0 0 20px ${popupConfig.borderColor},
+          0 4px 15px rgba(0,0,0,0.7);
+        font-weight: 900;
+        opacity: 0;
+        transform: scale(0.5) translateY(15px);
+        animation: 
+          word-pop-in ${TITLE_ANIMATION_CONFIG?.wordDuration || 600}ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+          title-glow 2s ease-in-out infinite alternate;
+        animation-delay: ${index * currentWordDelay}ms, ${index * currentWordDelay + (TITLE_ANIMATION_CONFIG?.wordDuration || 600)}ms;
+        filter: drop-shadow(0 0 8px ${popupConfig.borderColor});
+      `;
+      title.appendChild(wordSpan);
+      
+      // Fallback: Falls CSS-Animation fehlschlägt, manuell einblenden
+      setTimeout(() => {
+        if (getComputedStyle(wordSpan).opacity === '0') {
+          wordSpan.style.transition = 'all 0.3s ease-out';
+          wordSpan.style.opacity = '1';
+          wordSpan.style.transform = 'scale(1) translateY(0)';
+        }
+      }, (index * currentWordDelay) + 800);
+    });
+
+    // Multiplikator-Anzeige mit verbesserter Lesbarkeit
+    const multiplierText = document.createElement('div');
+    multiplierText.textContent = popupConfig.multiplier;
+    multiplierText.style.cssText = `
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      color: #FFFFFF;
+      text-shadow: 
+        0 0 8px rgba(255,255,255,0.6),
+        0 2px 10px rgba(0,0,0,0.8);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0;
+      animation: multiplier-pulse 1.5s ease-in-out infinite;
+      filter: drop-shadow(0 0 6px ${popupConfig.borderColor});
+      transform: translateY(10px);
+    `;
+
+    // Multiplikator direkt nach Popup-Start einblenden (konfigurierbar)
+    setTimeout(() => {
+      multiplierText.style.transition = 'all 0.6s ease-out';
+      multiplierText.style.opacity = '1';
+      multiplierText.style.transform = 'translateY(0)';
+    }, TITLE_ANIMATION_CONFIG?.multiplierDelay || 800);
+
+    // Gewinnbetrag mit Counter-Animation und verbesserter Lesbarkeit
+    const winAmountEl = document.createElement('h2');
+    winAmountEl.style.cssText = `
+      font-size: 3.2rem;
+      font-weight: 700;
+      margin: 0 0 15px 0;
+      color: #FFFFFF;
+      text-shadow: 
+        0 0 12px rgba(255,255,255,0.8),
+        0 3px 15px rgba(0,0,0,0.8);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 8px ${popupConfig.borderColor});
+      opacity: 0;
+    `;
+
+    // Startwert für Gewinnbetrag anzeigen
+    winAmountEl.textContent = '0€ GEWONNEN!';
+
+    // Counter-Animation für Gewinnbetrag - VERZÖGERT starten
+    const startCounterAfterTitle = () => {
+      // Gewinnbetrag einblenden
+      winAmountEl.style.transition = 'opacity 0.5s ease-in-out';
+      winAmountEl.style.opacity = '1';
+      
+      // Nach kurzer Pause mit dem Zählen beginnen
+      setTimeout(() => {
+        let currentAmount = 0;
+        const targetAmount = winAmount;
+        const countDuration = Math.min(2000, Math.max(800, targetAmount / 5));
+        const countIncrement = targetAmount / (countDuration / 50);
+        
+        const countInterval = setInterval(() => {
+          currentAmount += countIncrement;
+          if (currentAmount >= targetAmount) {
+            currentAmount = targetAmount;
+            clearInterval(countInterval);
+            winAmountEl.style.animation = 'amount-highlight 1s ease-in-out';
+          }
+          winAmountEl.textContent = `${Math.floor(currentAmount).toLocaleString()}€ GEWONNEN!`;
+        }, 50);
+      }, 300);
+    };
+
+    // Starte Counter nach konfigurierbarer Zeit
+    setTimeout(startCounterAfterTitle, TITLE_ANIMATION_CONFIG?.counterStartDelay || 1200);
+
+    // Kombination mit verbessertem Design
+    const comboContainer = document.createElement('div');
+    comboContainer.style.cssText = `
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.25) 0%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0.25) 100%);
+      border-radius: 20px;
+      padding: 30px;
+      margin: 30px 0;
+      backdrop-filter: blur(20px) brightness(1.2);
+      border: 3px solid rgba(255,255,255,0.4);
+      position: relative;
+      z-index: 2;
+      box-shadow: 
+        0 20px 60px rgba(0,0,0,0.4),
+        inset 0 0 30px rgba(255,255,255,0.2);
+      transform-style: preserve-3d;
+    `;
+
+    const comboLabel = document.createElement('div');
+    comboLabel.textContent = '🏆 GEWINN-KOMBINATION 🏆';
+    comboLabel.style.cssText = `
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: rgba(255,255,255,0.95);
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+      animation: label-shimmer 2s ease-in-out infinite;
+    `;
+
+    const comboText = document.createElement('div');
+    comboText.textContent = combination;
+    comboText.style.cssText = `
+      font-size: 4rem;
+      color: #FFFFFF;
+      text-shadow: 
+        0 0 20px ${popupConfig.borderColor},
+        0 4px 20px rgba(0,0,0,0.8),
+        0 0 40px ${popupConfig.borderColor}80;
+      letter-spacing: 20px;
+      animation: combo-bounce 1.8s ease-in-out infinite, combo-glow 3s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 15px ${popupConfig.borderColor});
+      position: relative;
+    `;
+
+    comboContainer.appendChild(comboLabel);
+    comboContainer.appendChild(comboText);
+
+    // Verbesserter Button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '🎰 Weiter spielen! 🎰';
+    closeBtn.style.cssText = `
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.3) 0%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0.3) 100%);
+      border: 4px solid rgba(255,255,255,0.6);
+      color: #FFFFFF;
+      padding: 22px 50px;
+      font-size: 1.6rem;
+      font-weight: 900;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 35px;
+      backdrop-filter: blur(20px) brightness(1.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-family: 'Impact', 'Arial Black', 'Segoe UI', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
+      z-index: 3;
+      box-shadow: 
+        0 12px 40px rgba(0,0,0,0.4),
+        0 0 30px rgba(255,255,255,0.3),
+        inset 0 0 20px rgba(255,255,255,0.2);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      overflow: hidden;
+    `;
+
+    // Hinzufügung eines animierten Hintergrund-Elements für den Button
+    const buttonBg = document.createElement('div');
+    buttonBg.style.cssText = `
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+      animation: button-shine 3s linear infinite;
+      pointer-events: none;
+    `;
+    closeBtn.appendChild(buttonBg);
+
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.5) 100%)';
+      closeBtn.style.transform = 'scale(1.12) translateY(-4px) rotateX(5deg)';
+      closeBtn.style.boxShadow = `
+        0 20px 60px rgba(0,0,0,0.5),
+        0 0 50px rgba(255,255,255,0.4),
+        inset 0 0 30px rgba(255,255,255,0.3),
+        0 0 100px ${popupConfig.borderColor}60`;
+      closeBtn.style.borderColor = popupConfig.borderColor;
+    });
+
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.3) 100%)';
+      closeBtn.style.transform = 'scale(1) translateY(0) rotateX(0deg)';
+      closeBtn.style.boxShadow = `
+        0 12px 40px rgba(0,0,0,0.4),
+        0 0 30px rgba(255,255,255,0.3),
+        inset 0 0 20px rgba(255,255,255,0.2)`;
+      closeBtn.style.borderColor = 'rgba(255,255,255,0.6)';
+    });
+
+    closeBtn.addEventListener('click', () => {
+      popup.style.animation = 'popup-dramatic-disappear 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
+      setTimeout(() => {
+        if (popup.parentNode) {
+          popup.parentNode.removeChild(popup);
+        }
+      }, 500);
+    });
+
+    // Erweiterte Partikel-Effekte
+    const particleContainer = document.createElement('div');
+    particleContainer.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    `;
+
+    // Mehr Partikel mit verschiedenen Animationen
+    const particles = popupConfig.particles.split('');
+    const particleCount = type === 'jackpot' ? 35 : type === 'mega' ? 28 : type === 'big' ? 22 : 18;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+      
+      const size = Math.random() * 3 + 1.2;
+      const animationType = ['particle-float', 'particle-spiral', 'particle-bounce'][Math.floor(Math.random() * 3)];
+      const duration = Math.random() * 5 + 2;
+      const delay = Math.random() * 4;
+      
+      particle.style.cssText = `
+        position: absolute;
+        font-size: ${size}rem;
+        color: #FFFFFF;
+        text-shadow: 
+          0 0 20px currentColor, 
+          0 0 40px currentColor,
+          0 0 60px ${popupConfig.borderColor};
+        animation: ${animationType} ${duration}s infinite linear;
+        animation-delay: ${delay}s;
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 100}%;
+        filter: drop-shadow(0 0 15px currentColor) hue-rotate(${Math.random() * 60}deg);
+        opacity: ${0.7 + Math.random() * 0.3};
+        z-index: 1;
+      `;
+      particleContainer.appendChild(particle);
+    }
+
+    // Firework-Effekt für große Gewinne
+    if (type === 'jackpot' || type === 'mega') {
+      createFireworkEffect(particleContainer, popupConfig.borderColor);
+    }
+
+    // Zusammenbauen
+    content.appendChild(glowEffect);
+    content.appendChild(particleContainer);
+    content.appendChild(title);
+    content.appendChild(multiplierText);
+    content.appendChild(winAmountEl);
+    content.appendChild(comboContainer);
+    content.appendChild(closeBtn);
+    popup.appendChild(content);
+    document.body.appendChild(popup);
+
+    // Auto-close mit visueller Countdown
+    createCountdownTimer(closeBtn, popupConfig.duration);
+
+    // Escape Key zum Schließen
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && popup.parentNode) {
+        closeBtn.click();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+
+  // Hilfsfunktionen für erweiterte Effekte
+  function playWinSound(type) {
+    // Placeholder für Sound-Effekte - kann später implementiert werden
+    console.log(`🔊 Playing ${type} win sound`);
+  }
+
+  function createFireworkEffect(container, color) {
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        const firework = document.createElement('div');
+        firework.style.cssText = `
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          background: ${color};
+          border-radius: 50%;
+          left: ${Math.random() * 100}%;
+          top: ${Math.random() * 100}%;
+          animation: firework-explode 2s ease-out forwards;
+          box-shadow: 0 0 20px ${color};
+        `;
+        container.appendChild(firework);
+        
+        setTimeout(() => {
+          if (firework.parentNode) {
+            firework.parentNode.removeChild(firework);
+          }
+        }, 2000);
+      }, i * 400);
+    }
+  }
+
+  function createCountdownTimer(button, duration) {
+    let remaining = duration / 1000;
+    const originalText = button.textContent;
+    
+    const countdown = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        button.textContent = `${originalText} (${remaining}s)`;
+      } else {
+        clearInterval(countdown);
+        button.click();
+      }
+    }, 1000);
+    
+    // Stop countdown wenn manuell geschlossen
+    button.addEventListener('click', () => {
+      clearInterval(countdown);
+    }, { once: true });
+  }
+
+  // CSS Animationen für Premium Popups
+  const popupStyles = document.createElement('style');
+  popupStyles.textContent = `
+    @keyframes popup-dramatic-appear {
+      0% { 
+        opacity: 0; 
+        transform: scale(0.1) rotateY(180deg) rotateX(45deg);
+        filter: blur(30px) brightness(0.5);
+      }
+      30% {
+        opacity: 0.6;
+        transform: scale(0.8) rotateY(90deg) rotateX(20deg);
+        filter: blur(10px) brightness(0.8);
+      }
+      60% {
+        opacity: 0.9;
+        transform: scale(1.15) rotateY(30deg) rotateX(-5deg);
+        filter: blur(2px) brightness(1.2);
+      }
+      100% { 
+        opacity: 1; 
+        transform: scale(1) rotateY(0deg) rotateX(0deg);
+        filter: blur(0px) brightness(1);
+      }
+    }
+    
+    @keyframes popup-dramatic-disappear {
+      0% { 
+        opacity: 1; 
+        transform: scale(1) rotateY(0deg) rotateX(0deg);
+        filter: blur(0px);
+      }
+      100% { 
+        opacity: 0; 
+        transform: scale(0.3) rotateY(-120deg) rotateX(30deg);
+        filter: blur(20px);
+      }
+    }
+    
+    @keyframes gradient-shift {
+      0%, 100% { 
+        background-position: 0% 50%; 
+        filter: hue-rotate(0deg);
+      }
+      25% { 
+        background-position: 100% 0%; 
+        filter: hue-rotate(10deg);
+      }
+      50% { 
+        background-position: 100% 100%; 
+        filter: hue-rotate(0deg);
+      }
+      75% { 
+        background-position: 0% 100%; 
+        filter: hue-rotate(-10deg);
+      }
+    }
+    
+    @keyframes glow-rotate {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    
+    @keyframes title-glow {
+      0% { 
+        filter: brightness(1) drop-shadow(0 0 8px currentColor); 
+        transform: scale(1);
+      }
+      100% { 
+        filter: brightness(1.2) drop-shadow(0 0 15px currentColor); 
+        transform: scale(1.01);
+      }
+    }
+    
+    @keyframes title-rainbow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    
+    @keyframes word-pop-in {
+      0% {
+        opacity: 0;
+        transform: scale(0.5) translateY(15px);
+        filter: blur(2px);
+      }
+      60% {
+        opacity: 0.9;
+        transform: scale(1.1) translateY(-3px);
+        filter: blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+      }
+    }
+    
+    @keyframes label-shimmer {
+      0%, 100% { 
+        opacity: 0.95; 
+        transform: translateX(0);
+      }
+      50% { 
+        opacity: 1; 
+        transform: translateX(2px);
+      }
+    }
+    
+    @keyframes button-shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    @keyframes multiplier-pulse {
+      0%, 100% { 
+        transform: scale(1); 
+        opacity: 0.9; 
+        filter: brightness(1);
+      }
+      50% { 
+        transform: scale(1.03); 
+        opacity: 1; 
+        filter: brightness(1.1);
+      }
+    }
+    
+    @keyframes amount-highlight {
+      0% { 
+        transform: scale(1); 
+        filter: brightness(1);
+      }
+      50% { 
+        transform: scale(1.15); 
+        filter: brightness(1.5) drop-shadow(0 0 30px currentColor);
+      }
+      100% { 
+        transform: scale(1); 
+        filter: brightness(1);
+      }
+    }
+    
+    @keyframes combo-bounce {
+      0%, 100% { 
+        transform: translateY(0) scale(1); 
+      }
+      25% { 
+        transform: translateY(-8px) scale(1.02); 
+      }
+      50% { 
+        transform: translateY(-4px) scale(1.05); 
+      }
+      75% { 
+        transform: translateY(-2px) scale(1.02); 
+      }
+    }
+    
+    @keyframes combo-glow {
+      0% { 
+        filter: drop-shadow(0 0 8px currentColor) brightness(1); 
+      }
+      100% { 
+        filter: drop-shadow(0 0 15px currentColor) brightness(1.1); 
+      }
+    }
+    
+    @keyframes jackpot-mega-pulse {
+      0%, 100% { 
+        transform: scale(1) rotateZ(0deg); 
+        filter: brightness(1);
+      }
+      25% { 
+        transform: scale(1.03) rotateZ(1deg); 
+        filter: brightness(1.1);
+      }
+      50% { 
+        transform: scale(1.06) rotateZ(0deg); 
+        filter: brightness(1.2);
+      }
+      75% { 
+        transform: scale(1.03) rotateZ(-1deg); 
+        filter: brightness(1.1);
+      }
+    }
+    
+    @keyframes mega-explosive {
+      0%, 100% { 
+        transform: scale(1) rotateZ(0deg); 
+        filter: hue-rotate(0deg);
+      }
+      20% { 
+        transform: scale(1.04) rotateZ(2deg); 
+        filter: hue-rotate(10deg);
+      }
+      40% { 
+        transform: scale(0.98) rotateZ(-2deg); 
+        filter: hue-rotate(-10deg);
+      }
+      60% { 
+        transform: scale(1.02) rotateZ(1deg); 
+        filter: hue-rotate(5deg);
+      }
+      80% { 
+        transform: scale(1.01) rotateZ(-1deg); 
+        filter: hue-rotate(-5deg);
+      }
+    }
+    
+    @keyframes big-spectacular {
+      0%, 100% { 
+        transform: scale(1) rotateY(0deg); 
+        filter: saturate(1);
+      }
+      33% { 
+        transform: scale(1.02) rotateY(2deg); 
+        filter: saturate(1.2);
+      }
+      66% { 
+        transform: scale(0.99) rotateY(-2deg); 
+        filter: saturate(1.1);
+      }
+    }
+    
+    @keyframes super-celebration {
+      0%, 100% { 
+        transform: translateX(0) scale(1); 
+      }
+      20% { 
+        transform: translateX(-3px) scale(1.01); 
+      }
+      40% { 
+        transform: translateX(3px) scale(0.99); 
+      }
+      60% { 
+        transform: translateX(-2px) scale(1.01); 
+      }
+      80% { 
+        transform: translateX(2px) scale(1); 
+      }
+    }
+    
+    @keyframes normal-celebration {
+      0%, 100% { 
+        filter: brightness(1) hue-rotate(0deg); 
+        transform: scale(1);
+      }
+      50% { 
+        filter: brightness(1.1) hue-rotate(10deg); 
+        transform: scale(1.01);
+      }
+    }
+    
+    @keyframes particle-float {
+      0% { 
+        transform: translateY(0) rotate(0deg) scale(0); 
+        opacity: 0; 
+      }
+      10% { 
+        transform: translateY(-20px) rotate(36deg) scale(1); 
+        opacity: 1; 
+      }
+      90% { 
+        transform: translateY(-120px) rotate(324deg) scale(1); 
+        opacity: 1; 
+      }
+      100% { 
+        transform: translateY(-150px) rotate(360deg) scale(0); 
+        opacity: 0; 
+      }
+    }
+    
+    @keyframes particle-spiral {
+      0% { 
+        transform: translateY(0) translateX(0) rotate(0deg) scale(0); 
+        opacity: 0; 
+      }
+      10% { 
+        transform: translateY(-10px) translateX(10px) rotate(36deg) scale(1); 
+        opacity: 1; 
+      }
+      25% { 
+        transform: translateY(-30px) translateX(-15px) rotate(90deg) scale(1.2); 
+        opacity: 1; 
+      }
+      50% { 
+        transform: translateY(-60px) translateX(20px) rotate(180deg) scale(1); 
+        opacity: 1; 
+      }
+      75% { 
+        transform: translateY(-90px) translateX(-10px) rotate(270deg) scale(1.1); 
+        opacity: 1; 
+      }
+      90% { 
+        transform: translateY(-110px) translateX(5px) rotate(324deg) scale(1); 
+        opacity: 1; 
+      }
+      100% { 
+        transform: translateY(-130px) translateX(0) rotate(360deg) scale(0); 
+        opacity: 0; 
+      }
+    }
+    
+    @keyframes particle-bounce {
+      0% { 
+        transform: translateY(0) translateX(0) rotate(0deg) scale(0); 
+        opacity: 0; 
+      }
+      10% { 
+        transform: translateY(-15px) translateX(5px) rotate(45deg) scale(1); 
+        opacity: 1; 
+      }
+      25% { 
+        transform: translateY(-40px) translateX(-10px) rotate(90deg) scale(1.3); 
+        opacity: 1; 
+      }
+      50% { 
+        transform: translateY(-20px) translateX(15px) rotate(180deg) scale(1); 
+        opacity: 1; 
+      }
+      75% { 
+        transform: translateY(-60px) translateX(-5px) rotate(270deg) scale(1.2); 
+        opacity: 1; 
+      }
+      90% { 
+        transform: translateY(-80px) translateX(8px) rotate(315deg) scale(1); 
+        opacity: 1; 
+      }
+      100% { 
+        transform: translateY(-100px) translateX(0) rotate(360deg) scale(0); 
+        opacity: 0; 
+      }
+    }
+    
+    @keyframes firework-explode {
+      0% { 
+        transform: scale(1); 
+        opacity: 1; 
+        filter: brightness(1);
+      }
+      30% { 
+        transform: scale(5); 
+        opacity: 0.9; 
+        filter: brightness(1.5);
+      }
+      60% { 
+        transform: scale(12); 
+        opacity: 0.6; 
+        filter: brightness(1.2);
+      }
+      100% { 
+        transform: scale(20); 
+        opacity: 0; 
+        filter: brightness(0.8);
+      }
+    }
+    
+    /* Responsive Design für mobile Geräte */
+    @media (max-width: 768px) {
+      .popup-content {
+        padding: 40px 50px !important;
+        min-width: 320px !important;
+        margin: 20px !important;
+      }
+      
+      .popup-content h1 {
+        font-size: 3.5rem !important;
+        letter-spacing: 2px !important;
+        gap: 10px !important;
+      }
+      
+      .popup-content h1 span {
+        font-size: 3.5rem !important;
+      }
+      
+      .popup-content h2 {
+        font-size: 2.2rem !important;
+      }
+      
+      .combo-container div:last-child {
+        font-size: 2.8rem !important;
+        letter-spacing: 10px !important;
+      }
+      
+      .popup-content button {
+        padding: 18px 35px !important;
+        font-size: 1.4rem !important;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .popup-content {
+        padding: 30px 35px !important;
+        min-width: 280px !important;
+        margin: 15px !important;
+      }
+      
+      .popup-content h1 {
+        font-size: 2.8rem !important;
+        letter-spacing: 1px !important;
+        gap: 8px !important;
+      }
+      
+      .popup-content h1 span {
+        font-size: 2.8rem !important;
+      }
+      
+      .popup-content h2 {
+        font-size: 1.9rem !important;
+      }
+      
+      .combo-container div:last-child {
+        font-size: 2.2rem !important;
+        letter-spacing: 6px !important;
+      }
+      
+      .popup-content button {
+        padding: 15px 30px !important;
+        font-size: 1.2rem !important;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .popup-content {
+        padding: 25px 30px !important;
+        min-width: 260px !important;
+      }
+      
+      .popup-content h1 {
+        font-size: 2.2rem !important;
+        gap: 6px !important;
+      }
+      
+      .popup-content h1 span {
+        font-size: 2.2rem !important;
+      }
+      
+      .popup-content h2 {
+        font-size: 1.6rem !important;
+      }
+      
+      .combo-container div:last-child {
+        font-size: 1.8rem !important;
+        letter-spacing: 4px !important;
+      }
+    }
+  `;
+  document.head.appendChild(popupStyles);
+
+  // ===== ENDE GEWINN-POPUP SYSTEM =====
 });
