@@ -25,6 +25,7 @@ body::before {
 }
 
 header {
+  max-height: 20px; /* reduced from 100px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -326,9 +327,19 @@ main {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  opacity: 0.9;
+  opacity: 0; /* Standardmäßig unsichtbar */
+  visibility: hidden; /* Nimmt keinen Platz ein wenn leer */
+  transform: translateY(10px); /* Leichte Animation */
+  transition: all 0.3s ease; /* Smooth Ein-/Ausblenden */
   width: 80%; /* limit width for better proportion */
   max-width: 280px;
+}
+
+/* Zeige das Result-Frame nur wenn es Inhalt hat */
+.result:not(:empty) {
+  opacity: 0.9;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .bet-control {
@@ -431,7 +442,7 @@ main {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 3rem; /* reduced from 3.5rem */
+  font-size: 60px; /* reduced from 3.5rem */
   z-index: 3;
   pointer-events: none;
   user-select: none;
@@ -441,12 +452,12 @@ main {
 }
 
 .left-emoji {
-  left: -80px; /* reduced from -100px */
+  left: -150px; /* reduced from -100px */
   animation: elegantFloat 8s ease-in-out infinite;
 }
 
 .right-emoji {
-  right: -80px; /* reduced from -100px */
+  right: -150px; /* reduced from -100px */
   animation: elegantFloat 8s ease-in-out infinite;
   animation-delay: 4s;
 }
