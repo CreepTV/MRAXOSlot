@@ -27,7 +27,7 @@ body::before {
 header {
   max-height: 20px; /* reduced from 100px */
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 1.5rem 2rem;
   background: rgba(15, 15, 35, 0.95);
@@ -42,13 +42,20 @@ header .back {
   color: #ffffff;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.08);
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
+  padding: 0;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.2rem;
   font-weight: 500;
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
+  position: absolute;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 header .back:hover {
@@ -58,7 +65,7 @@ header .back:hover {
 }
 
 .balance {
-  padding: 0.75rem 1.5rem;
+  padding: 8px 8px;
   border-radius: 12px;
   font-weight: 600;
   background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
@@ -70,30 +77,33 @@ header .back:hover {
 main {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; /* Vertikale Zentrierung */
+  justify-content: center; /* Horizontale Zentrierung */
   position: relative;
   z-index: 1;
-  padding: 1.5rem 1rem; /* reduced padding for better vertical space */
+  padding: 1.5rem 1rem;
+  min-height: calc(100vh - 120px); /* Stellt sicher, dass genug Platz für Zentrierung vorhanden ist */
 }
 
 .slot-machine {
   width: 90%;
-  max-width: 760px; /* further reduced from 600px */
-  min-height: 420px; /* increased from 380px to accommodate taller reels */
+  max-width: 760px;
+  min-height: 420px;
   background: rgba(26, 26, 46, 0.85);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px; /* reduced from 24px */
+  border-radius: 20px;
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  padding: 1.75rem 1.75rem; /* further reduced padding */
+  padding: 1.75rem 1.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* Zusätzliche vertikale Zentrierung des Inhalts */
   position: relative;
   overflow: hidden;
+  margin: auto; /* Stellt sicher, dass die Slot-Machine zentriert ist */
 }
 
 /* Eleganter Glow-Effekt nur bei Interaktion */

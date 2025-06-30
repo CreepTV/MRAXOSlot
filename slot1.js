@@ -552,18 +552,38 @@ document.addEventListener('DOMContentLoaded', function() {
   let buttonPressed = false;
   let buttonPressTimer = null;
 
+  // Gewichtete Symbolverteilung für reduzierte Gewinnchancen bei hohen Gewinnen
+  const symbolPool = [
+    // Häufige Symbole (niedrige Gewinne) - 70% der Fälle
+    '🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒',  // 8x
+    '🍋', '🍋', '🍋', '🍋', '🍋', '🍋', '🍋', '🍋',  // 8x
+    '🍊', '🍊', '🍊', '🍊', '🍊', '🍊', '🍊',        // 7x
+    '🍉', '🍉', '🍉', '🍉', '🍉', '🍉',              // 6x
+    '🍇', '🍇', '🍇', '🍇', '🍇',                    // 5x
+    
+    // Mittlere Symbole - 20% der Fälle
+    '⭐', '⭐', '⭐', '⭐',                           // 4x
+    
+    // Seltene Symbole (hohe Gewinne) - 10% der Fälle
+    '🔔', '🔔',                                     // 2x
+    '💎', '💎',                                     // 2x
+    '🍀'                                            // 1x (sehr selten)
+  ];
+  
   const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐', '🔔', '🍇', '💎', '🍀'];
+  
+  // Reduzierte Gewinnwerte für balanciertes Gameplay
   const winTable = {
-    // Drei gleiche Symbole (Hauptgewinne)
-    '🍒🍒🍒': 50,
-    '🍋🍋🍋': 30,
-    '🍊🍊🍊': 20,
-    '🍉🍉🍉': 100,
-    '⭐⭐⭐': 200,
-    '🔔🔔🔔': 500,
-    '🍇🍇🍇': 80,
-    '💎💎💎': 300,
-    '🍀🍀🍀': 1000,
+    // Drei gleiche Symbole (Hauptgewinne) - reduzierte Werte
+    '🍒🍒🍒': 40,    // war 50
+    '🍋🍋🍋': 25,    // war 30
+    '🍊🍊🍊': 18,    // war 20
+    '🍉🍉🍉': 80,    // war 100
+    '⭐⭐⭐': 150,    // war 200
+    '🔔🔔🔔': 400,   // war 500
+    '🍇🍇🍇': 65,    // war 80
+    '💎💎💎': 250,   // war 300
+    '🍀🍀🍀': 800,   // war 1000
     
     // Zwei gleiche Symbole (kleinere Gewinne)
     '🍒🍒': 5,    // Zwei Kirschen
@@ -908,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const finalSymbols = [[], [], []];
     for (let r = 0; r < 3; r++) {
       for (let i = 0; i < 3; i++) {
-        finalSymbols[r][i] = symbols[Math.floor(Math.random() * symbols.length)];
+        finalSymbols[r][i] = getRandomSymbol();
       }
     }
     
@@ -921,14 +941,14 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn(`🎰 Finalsymbole für Reel ${reelIdx + 1} unvollständig, repariere...`);
         finalSymbols[reelIdx] = [];
         for (let i = 0; i < 3; i++) {
-          finalSymbols[reelIdx][i] = symbols[Math.floor(Math.random() * symbols.length)];
+          finalSymbols[reelIdx][i] = getRandomSymbol();
         }
       }
       // Zusätzliche Prüfung: Stelle sicher, dass alle Symbole gültig sind
       reelSymbols.forEach((sym, symIdx) => {
         if (!sym || !symbols.includes(sym)) {
           console.warn(`🎰 Ungültiges Symbol in finalSymbols[${reelIdx}][${symIdx}]: ${sym}, ersetze...`);
-          finalSymbols[reelIdx][symIdx] = symbols[Math.floor(Math.random() * symbols.length)];
+          finalSymbols[reelIdx][symIdx] = getRandomSymbol();
         }
       });
     });
@@ -952,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn(`🎰 Finalsymbole für Reel ${idx + 1} nicht korrekt, generiere neue`);
         finalSymbols[idx] = [];
         for (let i = 0; i < 3; i++) {
-          finalSymbols[idx][i] = symbols[Math.floor(Math.random() * symbols.length)];
+          finalSymbols[idx][i] = getRandomSymbol();
         }
       }
       
@@ -1000,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn(`🎰 Reel ${reelIdx + 1} hat nur ${current.length} Symbole, fülle auf 3 auf`);
         current = [];
         for (let i = 0; i < 3; i++) {
-          current[i] = symbols[Math.floor(Math.random() * symbols.length)];
+          current[i] = getRandomSymbol();
         }
       }
       
@@ -1012,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Füge IMMER neue zufällige Symbole für die Spin-Animation hinzu
       for (let i = 0; i < spinLength; i++) {
-        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        const randomSymbol = getRandomSymbol();
         spinSymbols.push(randomSymbol);
       }
       
@@ -1210,22 +1230,23 @@ document.addEventListener('DOMContentLoaded', function() {
       updateBalance();
       
       // Bestimme Gewinn-Level für verschiedene Meldungen und Seitenanimationen
+      // Erhöhte Schwellenwerte für seltenere große Gewinne
       let winMessage = '';
       let emojiState = 'win';
       
-      if (win >= 1000) {
+      if (win >= 1500) {  // erhöht von 1000
         winMessage = `🎉 Super Mega Win! +${win}€ (${winDescription})`;
         emojiState = 'jackpot';
-      } else if (win >= 500) {
+      } else if (win >= 750) {  // erhöht von 500
         winMessage = `🔥 MEGA WIN! +${win}€ (${winDescription})`;
         emojiState = 'bigWin';
-      } else if (win >= 100) {
+      } else if (win >= 200) {  // erhöht von 100
         winMessage = `✨ BIG WIN! +${win}€ (${winDescription})`;
         emojiState = 'bigWin';
-      } else if (win >= 50) {
+      } else if (win >= 80) {   // erhöht von 50
         winMessage = `🎊 SUPER! +${win}€ (${winDescription})`;
         emojiState = 'win';
-      } else if (win >= 20) {
+      } else if (win >= 30) {   // erhöht von 20
         winMessage = `🎈 NICE! +${win}€ (${winDescription})`;
         emojiState = 'win';
       } else {
@@ -1235,15 +1256,15 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Seitenanimation für Gewinn (außer bei AutoSpin)
       if (!autoSpinActive) {
-        updateSideEmojis(emojiState, win >= 100 ? 5000 : 3000);
+        updateSideEmojis(emojiState, win >= 200 ? 5000 : 3000);  // angepasst an neue Schwelle
       }
       
       resultEl.textContent = winMessage;
       
-      // Check for Win Popup (nur für größere Gewinne ab 100€ - BIG WIN und höher)
-      if (win >= 100) { // Nur BIG WIN, MEGA WIN und Super Mega Win
+      // Check for Win Popup based on specific symbol combinations
+      if (result === '💎💎💎' || result === '🔔🔔🔔' || result === '🍀🍀🍀') {
         setTimeout(() => {
-          showWinPopup(win, bet);
+          showWinPopup(win, bet, result);
         }, 500);
       }
     } else {
@@ -1265,33 +1286,51 @@ document.addEventListener('DOMContentLoaded', function() {
   const winMultiplier = document.getElementById('win-multiplier');
   const collectBtn = document.getElementById('collect-win');
 
-  function showWinPopup(winAmount, betAmount) {
+  function showWinPopup(winAmount, betAmount, symbolCombo = null) {
     const multiplier = Math.round(winAmount / betAmount);
     
-    // Bestimme Popup-Stil basierend auf den exakten Gewinnkategorien aus finishSpin
+    // Bestimme Popup-Stil basierend auf Symbolkombination oder Gewinnbetrag
     let icon, title, titleColor, confettiCount;
     
-    if (winAmount >= 1000) {
-      // 🎉 Super Mega Win!
-      icon = '🎉';
+    if (symbolCombo === '🍀🍀🍀') {
+      // 🍀 Super Mega Win!
+      icon = '🍀';
       title = 'SUPER MEGA WIN!';
-      titleColor = '#9b59b6';
-      confettiCount = 50;
-    } else if (winAmount >= 500) {
-      // 🔥 MEGA WIN!
-      icon = '🔥';
+      titleColor = '#2ecc71';
+      confettiCount = 60;
+    } else if (symbolCombo === '🔔🔔🔔') {
+      // 🔔 Mega Win!
+      icon = '🔔';
       title = 'MEGA WIN!';
-      titleColor = '#e74c3c';
-      confettiCount = 35;
-    } else if (winAmount >= 100) {
-      // ✨ BIG WIN!
-      icon = '✨';
+      titleColor = '#f39c12';
+      confettiCount = 45;
+    } else if (symbolCombo === '💎💎💎') {
+      // 💎 Big Win!
+      icon = '💎';
       title = 'BIG WIN!';
-      titleColor = '#f4d03f';
-      confettiCount = 25;
+      titleColor = '#9b59b6';
+      confettiCount = 35;
     } else {
-      // Kein Popup für Gewinne unter 100€ (SUPER!, NICE!, Gewinn!)
-      return;
+      // Fallback für andere große Gewinne (falls showWinPopup ohne symbolCombo aufgerufen wird)
+      if (winAmount >= 1500) {
+        icon = '🎉';
+        title = 'SUPER MEGA WIN!';
+        titleColor = '#9b59b6';
+        confettiCount = 50;
+      } else if (winAmount >= 750) {
+        icon = '🔥';
+        title = 'MEGA WIN!';
+        titleColor = '#e74c3c';
+        confettiCount = 35;
+      } else if (winAmount >= 200) {
+        icon = '✨';
+        title = 'BIG WIN!';
+        titleColor = '#f4d03f';
+        confettiCount = 25;
+      } else {
+        // Kein Popup für Gewinne unter 200€
+        return;
+      }
     }
 
     // Popup-Inhalt setzen
@@ -1391,7 +1430,7 @@ document.addEventListener('DOMContentLoaded', function() {
       for (let i = 0; i < 3; i++) {
         const el = document.createElement('div');
         el.className = 'reel-symbol';
-        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        const randomSymbol = getRandomSymbol();
         el.textContent = randomSymbol;
         // Explizite Styles für bessere Darstellung
         el.style.height = '70px';
@@ -1677,13 +1716,13 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (current.length !== 3) {
         for (let i = 0; i < 3; i++) {
-          current[i] = symbols[Math.floor(Math.random() * symbols.length)];
+          current[i] = getRandomSymbol();
         }
       }
       
       let spinSymbols = [...current];
       for (let i = 0; i < 15; i++) { // Shorter spin for dev mode
-        spinSymbols.push(symbols[Math.floor(Math.random() * symbols.length)]);
+        spinSymbols.push(getRandomSymbol());
       }
       finalSymbols.forEach(sym => spinSymbols.push(sym));
       
@@ -1764,10 +1803,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         break;
       case 'test-win-popup':
-        // Teste Win-Popup nur mit den drei großen Gewinnkategorien
-        const testWins = [150, 650, 1200]; // BIG WIN (✨), MEGA WIN (🔥), SUPER MEGA WIN (🎉)
-        const randomWin = testWins[Math.floor(Math.random() * testWins.length)];
-        showWinPopup(randomWin, bet);
+        // Teste Win-Popup mit den drei spezifischen Symbolkombinationen
+        const symbolTests = [
+          { combo: '💎💎💎', amount: 250 * bet / 10 },
+          { combo: '🔔🔔🔔', amount: 400 * bet / 10 },
+          { combo: '🍀🍀🍀', amount: 800 * bet / 10 }
+        ];
+        const randomTest = symbolTests[Math.floor(Math.random() * symbolTests.length)];
+        showWinPopup(randomTest.amount, bet, randomTest.combo);
         break;
     }
   }
@@ -1890,5 +1933,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   if (!betAmountEl) {
     console.error('❌ Bet Amount Element nicht gefunden!');
+  }
+  
+  // Hilfsfunktion für gewichtete Symbolauswahl
+  function getRandomSymbol() {
+    return symbolPool[Math.floor(Math.random() * symbolPool.length)];
   }
 });
