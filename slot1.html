@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Marco</title>
+    <title>Club Marco - Premium Slots</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="slot1.css">
     <script defer src="slot1.js"></script>
+    <meta name="theme-color" content="#1a1a2e">
 </head>
 <body>
-    <!-- Ladebildschirm -->
+    <!-- Eleganter Ladebildschirm -->
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
             <div class="slot-machine-icon">🎰</div>
-            <h2>Spiel wird geladen...</h2>
+            <h2>Club Marco</h2>
             <div class="loading-spinner">
                 <div class="spinner"></div>
             </div>
             <div class="loading-progress">
                 <div class="progress-bar" id="progress-bar"></div>
             </div>
-            <p class="loading-text" id="loading-text">Initialisiere Spiel...</p>
+            <p class="loading-text" id="loading-text">Lade Premium Experience...</p>
         </div>
     </div>
 
@@ -58,6 +62,17 @@
                 </div>
                 <button id="spin"></button>
                 <div class="result" id="result"></div>
+            </div>
+
+            
+            <!-- Enhanced Big Win Popup -->
+            <div class="win-popup-overlay" id="win-popup-overlay"></div>
+            <div class="big-win-popup" id="big-win-popup">
+                <div class="win-icon" id="win-icon">🎉</div>
+                <h2 id="win-title">GROSSER GEWINN!</h2>
+                <div class="win-amount" id="win-amount">0 €</div>
+                <div class="win-multiplier" id="win-multiplier"></div>
+                <button class="collect-btn" id="collect-win">Sammeln</button>
             </div>
         </main>
     </div>

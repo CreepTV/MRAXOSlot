@@ -541,8 +541,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
   }
   
-  // ===== ENDE DES AUDIO-SYSTEMS =====
-  
   let spinning = false;
   let fastStop = false;
   let spinTimeouts = [];
@@ -702,23 +700,29 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   betMinus.addEventListener('click', () => {
+    console.log('🎰 Bet Minus clicked, spinning:', spinning, 'betIndex:', betIndex);
     if (spinning) return;
     if (betIndex > 0) {
       betIndex--;
       updateBetDisplay();
+      console.log('🎰 Bet decreased to:', bet);
     }
   });
+  
   betPlus.addEventListener('click', () => {
+    console.log('🎰 Bet Plus clicked, spinning:', spinning, 'betIndex:', betIndex);
     if (spinning) return;
     if (betIndex < betSteps.length - 1) {
       betIndex++;
       updateBetDisplay();
+      console.log('🎰 Bet increased to:', bet);
     }
   });
 
   // Vereinfachte Button-Funktionalität
 
   spinBtn.addEventListener('mousedown', (e) => {
+    console.log('🎰 Spin Button mousedown, autoSpinActive:', autoSpinActive);
     if (autoSpinActive) {
       // Bei AutoSpin sofort stoppen
       stopAutoSpin();
@@ -730,12 +734,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Timer für Long Press
     buttonPressTimer = setTimeout(() => {
       if (buttonPressed) {
+        console.log('🎰 Long press detected - starting AutoSpin');
         startAutoSpin();
       }
     }, 800);
   });
 
   spinBtn.addEventListener('mouseup', (e) => {
+    console.log('🎰 Spin Button mouseup, buttonPressed:', buttonPressed, 'autoSpinActive:', autoSpinActive);
     if (buttonPressTimer) {
       clearTimeout(buttonPressTimer);
       buttonPressTimer = null;
@@ -743,6 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (buttonPressed && !autoSpinActive) {
       // Nur spinnen wenn kein AutoSpin läuft
+      console.log('🎰 Single click detected - handling spin');
       handleSpin();
     }
     
@@ -869,6 +876,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function performSpin() {
+    // WICHTIG: Überprüfe vor jedem Spin, ob die Reels korrekt gefüllt sind
+    resetReelsIfEmpty();
+    
     spinning = true;
     fastStop = false;
     spinTimeouts = [];
@@ -902,23 +912,71 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
+    // Debug: Überprüfe generierte Finalsymbole
+    console.log('🎰 Generierte Finalsymbole:', finalSymbols);
+    
+    // Stelle sicher, dass alle finalSymbols Arrays korrekt gefüllt sind
+    finalSymbols.forEach((reelSymbols, reelIdx) => {
+      if (!reelSymbols || reelSymbols.length !== 3) {
+        console.warn(`🎰 Finalsymbole für Reel ${reelIdx + 1} unvollständig, repariere...`);
+        finalSymbols[reelIdx] = [];
+        for (let i = 0; i < 3; i++) {
+          finalSymbols[reelIdx][i] = symbols[Math.floor(Math.random() * symbols.length)];
+        }
+      }
+      // Zusätzliche Prüfung: Stelle sicher, dass alle Symbole gültig sind
+      reelSymbols.forEach((sym, symIdx) => {
+        if (!sym || !symbols.includes(sym)) {
+          console.warn(`🎰 Ungültiges Symbol in finalSymbols[${reelIdx}][${symIdx}]: ${sym}, ersetze...`);
+          finalSymbols[reelIdx][symIdx] = symbols[Math.floor(Math.random() * symbols.length)];
+        }
+      });
+    });
+    
     function finishReel(idx) {
       if (finished[idx]) return;
       finished[idx] = true;
       const strip = strips[idx];
+      
+      console.log(`🎰 Beende Reel ${idx + 1} mit Symbolen:`, finalSymbols[idx]);
+      
+      // Stoppe alle Animationen sofort
       strip.style.transition = 'none';
+      strip.style.transform = 'translateY(0px)';
+      
+      // WICHTIG: Komplett neu aufbauen für saubere Darstellung
       strip.innerHTML = '';
+      
+      // Stelle sicher, dass finalSymbols[idx] korrekt gefüllt ist
+      if (!finalSymbols[idx] || finalSymbols[idx].length !== 3) {
+        console.warn(`🎰 Finalsymbole für Reel ${idx + 1} nicht korrekt, generiere neue`);
+        finalSymbols[idx] = [];
+        for (let i = 0; i < 3; i++) {
+          finalSymbols[idx][i] = symbols[Math.floor(Math.random() * symbols.length)];
+        }
+      }
+      
+      // Erstelle die 3 finalen sichtbaren Symbole
       for (let i = 0; i < 3; i++) {
         const el = document.createElement('div');
         el.className = 'reel-symbol';
         el.textContent = finalSymbols[idx][i];
+        el.style.height = '70px';
+        el.style.lineHeight = '70px';
+        el.style.fontSize = '40px';
+        el.style.textAlign = 'center';
         strip.appendChild(el);
       }
       
       // Setze die finale Position mit dem gespeicherten Offset
       strip.style.transform = `translateY(${reelFinalOffsets[idx]}px)`;
       
+      // Debug: Überprüfe was tatsächlich angezeigt wird
+      const displayedSymbols = Array.from(strip.children).map(el => el.textContent);
+      console.log(`🎰 Reel ${idx + 1} zeigt jetzt:`, displayedSymbols);
+      
       if (finished.every(Boolean)) {
+        console.log('🎰 Alle Reels beendet, finalisiere Spin');
         finishSpin(finalSymbols);
         spinning = false;
         if (!autoSpinActive) {
@@ -930,36 +988,62 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function animateReel(reelIdx, finalSymbols, startDelay, stopDelay) {
       const strip = strips[reelIdx];
-      // Zeige aktuelle Symbole bis zum Spin, nicht sofort neue!
+      
+      // Debug: Überprüfe den aktuellen Zustand des Strips
+      console.log(`🎰 Starte Animation für Reel ${reelIdx + 1}, aktuell ${strip.children.length} Symbole`);
+      
+      // Hole die aktuellen Symbole aus dem Strip
       let current = Array.from(strip.children).map(el => el.textContent);
-      strip.innerHTML = '';
-      // Wenn noch keine Symbole, fülle mit Zufall
-      if (current.length !== 3) {
+      
+      // Stelle sicher, dass immer mindestens 3 Symbole vorhanden sind
+      if (current.length < 3) {
+        console.warn(`🎰 Reel ${reelIdx + 1} hat nur ${current.length} Symbole, fülle auf 3 auf`);
+        current = [];
         for (let i = 0; i < 3; i++) {
           current[i] = symbols[Math.floor(Math.random() * symbols.length)];
         }
       }
+      
+      // Starte mit den aktuellen Symbolen
       let spinSymbols = [...current];
       
       // Verkürzte Animation für AutoSpin
       const spinLength = autoSpinActive ? 15 : 25;
+      
+      // Füge IMMER neue zufällige Symbole für die Spin-Animation hinzu
       for (let i = 0; i < spinLength; i++) {
-        spinSymbols.push(symbols[Math.floor(Math.random() * symbols.length)]);
+        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        spinSymbols.push(randomSymbol);
       }
       
       // Füge die finalen Symbole am Ende an, damit die Animation auf das richtige Muster ausläuft
       finalSymbols.forEach(sym => spinSymbols.push(sym));
-      spinSymbols.forEach(sym => {
+      
+      console.log(`🎰 Reel ${reelIdx + 1}: Insgesamt ${spinSymbols.length} Symbole für Animation`);
+      console.log(`🎰 Finale Symbole für Reel ${reelIdx + 1}:`, finalSymbols);
+      
+      // Leere den Strip und fülle ihn mit allen Spin-Symbolen
+      strip.innerHTML = '';
+      spinSymbols.forEach((sym, index) => {
         const el = document.createElement('div');
         el.className = 'reel-symbol';
         el.textContent = sym;
+        el.style.height = '70px';
+        el.style.lineHeight = '70px';
+        el.style.fontSize = '40px';
+        el.style.textAlign = 'center';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
         strip.appendChild(el);
       });
+      
       strip.style.transform = 'translateY(0)';
       let finishedCalled = false;
       const finishNow = () => {
         if (!finishedCalled) {
           finishedCalled = true;
+          console.log(`🎰 finishNow() aufgerufen für Reel ${reelIdx + 1}`);
           finishReel(reelIdx);
         }
       };
@@ -985,7 +1069,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const finalY = -70 * (spinSymbols.length - 3) + finalOffset;
         strip.style.transform = `translateY(${finalY}px)`;
         
+        console.log(`🎰 Reel ${reelIdx + 1}: Animation startet mit ${duration}ms Dauer zu Position ${finalY}px`);
+        
         let t2 = setTimeout(() => {
+          console.log(`🎰 Reel ${reelIdx + 1}: Animation-Timer abgelaufen, rufe finishNow() auf`);
           finishNow();
         }, duration);
         spinTimeouts.push(t2);
@@ -1153,20 +1240,10 @@ document.addEventListener('DOMContentLoaded', function() {
       
       resultEl.textContent = winMessage;
       
-      // Check for Win Popup (basierend auf Gewinnhöhe)
-      if (win >= 50) { // Zeige Popup für alle größeren Gewinne
+      // Check for Win Popup (nur für größere Gewinne ab 100€ - BIG WIN und höher)
+      if (win >= 100) { // Nur BIG WIN, MEGA WIN und Super Mega Win
         setTimeout(() => {
-          let popupType = 'normal';
-          if (win >= 1000) {
-            popupType = 'jackpot';
-          } else if (win >= 500) {
-            popupType = 'mega';
-          } else if (win >= 100) {
-            popupType = 'big';
-          } else if (win >= 50) {
-            popupType = 'super';
-          }
-          showBigWinPopup(popupType, win, result);
+          showWinPopup(win, bet);
         }, 500);
       }
     } else {
@@ -1179,6 +1256,121 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('slot1_balance', balance);
   }
 
+  // Win-Popup System
+  const winPopup = document.getElementById('big-win-popup');
+  const winPopupOverlay = document.getElementById('win-popup-overlay');
+  const winIcon = document.getElementById('win-icon');
+  const winTitle = document.getElementById('win-title');
+  const winAmountEl = document.getElementById('win-amount');
+  const winMultiplier = document.getElementById('win-multiplier');
+  const collectBtn = document.getElementById('collect-win');
+
+  function showWinPopup(winAmount, betAmount) {
+    const multiplier = Math.round(winAmount / betAmount);
+    
+    // Bestimme Popup-Stil basierend auf den exakten Gewinnkategorien aus finishSpin
+    let icon, title, titleColor, confettiCount;
+    
+    if (winAmount >= 1000) {
+      // 🎉 Super Mega Win!
+      icon = '🎉';
+      title = 'SUPER MEGA WIN!';
+      titleColor = '#9b59b6';
+      confettiCount = 50;
+    } else if (winAmount >= 500) {
+      // 🔥 MEGA WIN!
+      icon = '🔥';
+      title = 'MEGA WIN!';
+      titleColor = '#e74c3c';
+      confettiCount = 35;
+    } else if (winAmount >= 100) {
+      // ✨ BIG WIN!
+      icon = '✨';
+      title = 'BIG WIN!';
+      titleColor = '#f4d03f';
+      confettiCount = 25;
+    } else {
+      // Kein Popup für Gewinne unter 100€ (SUPER!, NICE!, Gewinn!)
+      return;
+    }
+
+    // Popup-Inhalt setzen
+    winIcon.textContent = icon;
+    winTitle.textContent = title;
+    winTitle.style.color = titleColor;
+    winAmountEl.textContent = `${winAmount} €`;
+    winMultiplier.textContent = `${multiplier}x Einsatz`;
+
+    // Overlay und Popup anzeigen
+    winPopupOverlay.classList.add('show');
+    winPopup.classList.add('show');
+    
+    // Celebration Animation nach kurzer Verzögerung
+    setTimeout(() => {
+      winPopup.classList.add('celebrate');
+    }, 300);
+
+    // Konfetti-Effekt
+    createConfetti(confettiCount);
+
+    // Sound-Effekt
+    if (musicStarted) {
+      activateSpinMusic(); // Aktiviere Spin-Musik für Celebration
+    }
+  }
+
+  function hideWinPopup() {
+    winPopup.classList.remove('show', 'celebrate');
+    winPopupOverlay.classList.remove('show');
+    
+    // Reset Emoji-Zustand
+    setTimeout(() => {
+      if (!spinning && !autoSpinActive) {
+        updateSideEmojis('idle');
+      }
+    }, 1000);
+  }
+
+  function createConfetti(count = 30) {
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        
+        // Zufällige horizontale Position
+        confetti.style.left = (Math.random() * 100) + '%';
+        
+        // Zufällige Verzögerung für gestaffelten Effekt
+        confetti.style.animationDelay = (Math.random() * 0.5) + 's';
+        
+        // Zufällige Größe
+        const size = Math.random() * 8 + 6;
+        confetti.style.width = size + 'px';
+        confetti.style.height = size + 'px';
+        
+        document.body.appendChild(confetti);
+        
+        // Entferne Konfetti nach Animation
+        setTimeout(() => {
+          if (confetti.parentNode) {
+            confetti.parentNode.removeChild(confetti);
+          }
+        }, 3000);
+      }, i * 50); // Gestaffeltes Spawning
+    }
+  }
+
+  // Event-Listener für Collect-Button
+  collectBtn.addEventListener('click', hideWinPopup);
+  winPopupOverlay.addEventListener('click', hideWinPopup);
+
+  // ESC-Taste zum Schließen
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && winPopup.classList.contains('show')) {
+      hideWinPopup();
+    }
+  });
+
   function updateBalance() {
     balanceEl.textContent = balance;
     
@@ -1189,14 +1381,29 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function fillInitialReels() {
+    console.log('🎰 Fülle initial Reels mit Symbolen...');
     for (let r = 0; r < 3; r++) {
-      strips[r].innerHTML = '';
+      const strip = strips[r];
+      strip.innerHTML = '';
+      strip.style.transform = 'translateY(0px)';
+      strip.style.transition = 'none';
+      
       for (let i = 0; i < 3; i++) {
         const el = document.createElement('div');
         el.className = 'reel-symbol';
-        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        strips[r].appendChild(el);
+        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        el.textContent = randomSymbol;
+        // Explizite Styles für bessere Darstellung
+        el.style.height = '70px';
+        el.style.lineHeight = '70px';
+        el.style.fontSize = '40px';
+        el.style.textAlign = 'center';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        strip.appendChild(el);
       }
+      console.log(`🎰 Reel ${r + 1} gefüllt mit: ${Array.from(strip.children).map(el => el.textContent).join(' ')}`);
     }
   }
   fillInitialReels();
@@ -1313,6 +1520,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="dev-btn" data-action="fast-spin">⚡ Fast Spin Mode</button>
       <button class="dev-btn" data-action="toggle-music">🎵 Toggle Music</button>
       <button class="dev-btn" data-action="test-spin-music">🎸 Test Spin Music</button>
+      <button class="dev-btn" data-action="test-win-popup">🎉 Test Win Popup</button>
     `;
 
     // Add CSS for dev buttons
@@ -1555,6 +1763,12 @@ document.addEventListener('DOMContentLoaded', function() {
           alert('Bitte erst Musik starten!');
         }
         break;
+      case 'test-win-popup':
+        // Teste Win-Popup nur mit den drei großen Gewinnkategorien
+        const testWins = [150, 650, 1200]; // BIG WIN (✨), MEGA WIN (🔥), SUPER MEGA WIN (🎉)
+        const randomWin = testWins[Math.floor(Math.random() * testWins.length)];
+        showWinPopup(randomWin, bet);
+        break;
     }
   }
 
@@ -1587,1154 +1801,94 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ===== ERWEITERTE AUDIO-DEBUG-FUNKTIONEN =====
-  
-  // Console-Logging für detaillierte Sync-Informationen
-  function logDetailedSyncInfo() {
-    if (!musicStarted) {
-      console.log('🎵 Musik nicht gestartet - keine Sync-Infos verfügbar');
-      return;
-    }
-    
-    console.group('🎵 Detaillierte Synchronisierung-Informationen');
-    
-    Object.entries(musicStems).forEach(([name, stem]) => {
-      const info = {
-        name: name,
-        playing: !stem.paused,
-        currentTime: stem.currentTime.toFixed(3) + 's',
-        volume: stem.volume.toFixed(3),
-        targetVolume: stem.targetVolume,
-        fadeState: stem._fadeState,
-        isPlaying: stem._isPlaying,
-        syncOffset: stem._syncOffset?.toFixed(3) + 's' || '0s',
-        lastSync: stem._lastSyncCheck ? new Date(stem._lastSyncCheck).toLocaleTimeString() : 'Nie'
-      };
-      
-      console.log(`🎼 ${name.toUpperCase()}:`, info);
+  // ===== DEBUG-FUNKTIONEN FÜR REELS =====
+  function checkReelState() {
+    console.group('🎰 Reel-Zustand Check');
+    strips.forEach((strip, index) => {
+      const symbols = Array.from(strip.children).map(el => el.textContent);
+      const transform = strip.style.transform;
+      console.log(`Reel ${index + 1}: [${symbols.join(', ')}] - Transform: ${transform}`);
     });
-    
-    const status = getSyncStatus();
-    if (typeof status === 'object') {
-      console.log('📊 Sync-Status:', status);
-    }
-    
-    console.log('⚙️ System-Status:', {
-      musicStarted,
-      stemsSynced,
-      beatSyncEnabled,
-      resyncAttempts,
-      isFadingOut,
-      syncMonitoringActive: !!syncCheckInterval
-    });
-    
     console.groupEnd();
   }
-  
-  // Kontinuierliches Sync-Monitoring mit detailliertem Logging
-  function enableVerboseSyncLogging() {
-    const verboseInterval = setInterval(() => {
-      if (musicStarted) {
-        const playingStems = Object.values(musicStems).filter(stem => !stem.paused);
-        if (playingStems.length > 1) {
-          const times = playingStems.map(stem => stem.currentTime);
-          const maxDiff = Math.max(...times) - Math.min(...times);
-          
-          if (maxDiff > 0.05) { // Log nur bei Abweichungen > 50ms
-            console.warn(`🎵 Sync-Abweichung: ${maxDiff.toFixed(3)}s zwischen Stems`);
-            
-            playingStems.forEach((stem, index) => {
-              const stemName = Object.keys(musicStems).find(key => musicStems[key] === stem);
-              console.log(`  ${stemName}: ${stem.currentTime.toFixed(3)}s`);
-            });
-          }
-        }
-      }
-    }, 5000); // Alle 5 Sekunden prüfen
-    
-    console.log('🎵 Verbose Sync-Logging aktiviert');
-    return verboseInterval;
-  }
-  
-  // Globale Debug-Funktionen für Browser-Console
-  window.audioDebug = {
-    getSyncStatus: getSyncStatus,
-    logDetailedInfo: logDetailedSyncInfo,
-    forceSync: performSilentBeatSync,
-    forceCrossfadeSync: performBeatSync,
-    synchronizeNow: synchronizeStems,
-    enableVerboseLogging: enableVerboseSyncLogging,
-    stopAllMusic: stopAllMusic,
-    startMusic: () => {
-      if (!musicStarted && loadingComplete) {
-        startAudioSystem();
+
+  function resetReelsIfEmpty() {
+    let needsReset = false;
+    strips.forEach((strip, index) => {
+      if (strip.children.length === 0) {
+        console.warn(`🎰 Reel ${index + 1} ist leer! Fülle neu...`);
+        needsReset = true;
       } else {
-        console.log('🎵 Musik bereits gestartet oder Laden nicht abgeschlossen');
-      }
-    },
-    testDrift: (amount = 0.1) => {
-      const stems = Object.values(musicStems).filter(stem => !stem.paused);
-      if (stems.length > 1) {
-        stems[1].currentTime += amount;
-        console.log(`🎵 Sanfter Sync-Drift von ${amount}s simuliert`);
-      }
-    },
-    testCrossfade: () => {
-      const stems = Object.values(musicStems).filter(stem => !stem.paused);
-      if (stems.length > 0) {
-        const bpm = 127;
-        const beatDuration = 60 / bpm;
-        const nextBeat = Math.ceil(stems[0].currentTime / beatDuration) * beatDuration;
-        performCrossfadeSync(stems[0], nextBeat);
-        console.log('🎵 Crossfade-Test durchgeführt');
-      }
-    },
-    enableSilentMode: () => {
-      console.log('🎵 Alle zukünftigen Synchronisierungen werden unhörbar durchgeführt');
-      window._forceSilentSync = true;
-    }
-  };
-  
-  console.log('🎵 Audio-Debug-Funktionen verfügbar unter window.audioDebug');
-  console.log('🎵 Beispiel: audioDebug.getSyncStatus() oder audioDebug.logDetailedInfo()');
-
-  // ===== ENDE DER AUDIO-DEBUG-FUNKTIONEN =====
-
-  // ===== PREMIUM GEWINN-POPUP SYSTEM =====
-  
-  // ===== KONFIGURATION FÜR WORT-ANIMATIONEN =====
-  const TITLE_ANIMATION_CONFIG = {
-    // Basis-Verzögerung zwischen Wörtern (in Millisekunden)
-    // Niedrigere Werte = schneller, höhere Werte = langsamer
-    wordDelay: {
-      'jackpot': 100,    // Sehr schnell für maximalen Impact
-      'mega': 120,       // Schnell
-      'big': 150,        // Normal
-      'super': 150,      // Normal
-      'normal': 180      // Etwas langsamer
-    },
-    
-    // Dauer der einzelnen Wort-Animation (in Millisekunden)
-    wordDuration: 600,   // Wie lange jedes Wort zum Pop-In braucht
-    
-    // Wann andere Elemente erscheinen sollen (in Millisekunden ab Popup-Start)
-    multiplierDelay: 800,    // Multiplikator erscheint nach X ms
-    counterStartDelay: 1200  // Geld-Counter startet nach X ms
-  };
-  
-  /* 
-  ===== ANPASSUNGS-HILFE =====
-  
-  Um die Wort-Geschwindigkeit zu ändern, bearbeite die wordDelay Werte:
-  - Für schnellere Animationen: Werte verkleinern (z.B. 80ms)
-  - Für langsamere Animationen: Werte vergrößern (z.B. 250ms)
-  
-  Beispiele:
-  - Sehr schnell (Action-Style): 80-100ms
-  - Schnell (Standard-Casino): 120-150ms  
-  - Normal (Lesbar): 150-200ms
-  - Langsam (Dramatisch): 250-400ms
-  
-  Andere Timing-Anpassungen:
-  - wordDuration: Wie "bouncy" das einzelne Wort ist
-  - multiplierDelay: Wann der Multiplikator erscheint
-  - counterStartDelay: Wann das Geld anfängt zu zählen
-  */
-  // ===== ENDE KONFIGURATION =====
-  
-  function showBigWinPopup(type, winAmount, combination) {
-    // Entferne vorhandene Popups
-    const existingPopup = document.querySelector('.big-win-popup');
-    if (existingPopup) {
-      existingPopup.remove();
-    }
-
-    // Sound-Effekt für Popup (falls verfügbar)
-    playWinSound(type);
-
-    // Popup Container
-    const popup = document.createElement('div');
-    popup.className = 'big-win-popup';
-    
-    // Hole Animations-Timing für diesen Gewinn-Typ (mit Fallback)
-    let currentWordDelay = 150; // Standard-Fallback
-    try {
-      currentWordDelay = TITLE_ANIMATION_CONFIG.wordDelay[type] || TITLE_ANIMATION_CONFIG.wordDelay.normal || 150;
-    } catch (e) {
-      console.warn('Animation config fehlt, verwende Standard-Werte');
-    }
-    
-    // Bestimme Popup-Styling basierend auf Gewinn-Typ
-    let popupConfig = {
-      title: '',
-      subtitle: '',
-      bgGradient: '',
-      borderColor: '',
-      titleColor: '',
-      titleGlow: '',
-      animation: '',
-      particles: '',
-      multiplier: '',
-      duration: 8000
-    };
-
-    // Berechne Multiplikator
-    const multiplier = Math.round(winAmount / (bet / 10));
-
-    switch(type) {
-      case 'jackpot':
-        popupConfig = {
-          title: 'Super Mega Win!',
-          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
-          bgGradient: 'linear-gradient(45deg, #FFD700 0%, #FFA500 25%, #FF6B35 50%, #FFD700 75%, #FFA500 100%)',
-          borderColor: '#FFD700',
-          titleColor: '#1a1a1a',
-          titleGlow: '0 0 40px #FFD700, 0 0 80px #FFD700, 0 0 120px #FFD700',
-          animation: 'jackpot-mega-pulse',
-          particles: '💎👑✨🎊🌟💰🔥💫⭐',
-          multiplier: `${multiplier}x MULTIPLIER!`,
-          duration: 12000
-        };
-        break;
-      case 'mega':
-        popupConfig = {
-          title: 'MEGA WIN!',
-          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
-          bgGradient: 'linear-gradient(45deg, #FF6B35 0%, #F7931E 25%, #FFD700 50%, #FF6B35 75%, #F7931E 100%)',
-          borderColor: '#FF6B35',
-          titleColor: '#FFFFFF',
-          titleGlow: '0 0 30px #FF6B35, 0 0 60px #FF6B35, 0 0 90px #FF6B35',
-          animation: 'mega-explosive',
-          particles: '🔥⚡💥🌟🎆💫🎊✨⭐🎉',
-          multiplier: `${multiplier}x MEGA!`,
-          duration: 10000
-        };
-        break;
-      case 'big':
-        popupConfig = {
-          title: 'BIG WIN!',
-          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
-          bgGradient: 'linear-gradient(45deg, #9B59B6 0%, #E74C3C 25%, #F39C12 50%, #9B59B6 75%, #E74C3C 100%)',
-          borderColor: '#9B59B6',
-          titleColor: '#FFFFFF',
-          titleGlow: '0 0 25px #9B59B6, 0 0 50px #9B59B6, 0 0 75px #9B59B6',
-          animation: 'big-spectacular',
-          particles: '⭐🎊🎈💫🌈✨💜❤️💛🎯',
-          multiplier: `${multiplier}x BIG!`,
-          duration: 8000
-        };
-        break;
-      case 'super':
-        popupConfig = {
-          title: 'SUPER WIN!',
-          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
-          bgGradient: 'linear-gradient(45deg, #3498DB 0%, #9B59B6 25%, #E74C3C 50%, #3498DB 75%, #9B59B6 100%)',
-          borderColor: '#3498DB',
-          titleColor: '#FFFFFF',
-          titleGlow: '0 0 20px #3498DB, 0 0 40px #3498DB, 0 0 60px #3498DB',
-          animation: 'super-celebration',
-          particles: '🎉🎈🎀🎁💝🎯🎊⭐💙💜',
-          multiplier: `${multiplier}x SUPER!`,
-          duration: 7000
-        };
-        break;
-      default:
-        popupConfig = {
-          title: 'GEWINN!',
-          subtitle: `${winAmount.toLocaleString()}€ GEWONNEN!`,
-          bgGradient: 'linear-gradient(45deg, #2ECC71 0%, #3498DB 25%, #9B59B6 50%, #2ECC71 75%, #3498DB 100%)',
-          borderColor: '#2ECC71',
-          titleColor: '#FFFFFF',
-          titleGlow: '0 0 15px #2ECC71, 0 0 30px #2ECC71, 0 0 45px #2ECC71',
-          animation: 'normal-celebration',
-          particles: '🎉🎊⭐💚💙💜🌟✨🎈🎀',
-          multiplier: `${multiplier}x WIN!`,
-          duration: 6000
-        };
-    }
-
-    popup.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(ellipse at center, 
-        rgba(0,0,0,0.95) 0%, 
-        rgba(10,10,30,0.98) 40%, 
-        rgba(0,0,0,0.99) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      backdrop-filter: blur(12px) saturate(1.5);
-      animation: popup-dramatic-appear 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      overflow: hidden;
-    `;
-
-    // Popup Content mit erweiterten Features
-    const content = document.createElement('div');
-    content.className = 'popup-content';
-    content.style.cssText = `
-      background: ${popupConfig.bgGradient};
-      background-size: 300% 300%;
-      border: 6px solid ${popupConfig.borderColor};
-      border-radius: 30px;
-      padding: 60px 80px;
-      text-align: center;
-      box-shadow: 
-        0 40px 120px rgba(0,0,0,0.8), 
-        0 0 200px ${popupConfig.borderColor}60,
-        0 0 80px ${popupConfig.borderColor}40,
-        inset 0 0 80px rgba(255,255,255,0.15),
-        inset 0 0 40px rgba(255,255,255,0.1);
-      animation: ${popupConfig.animation} 3s infinite, gradient-shift 3s ease-in-out infinite;
-      position: relative;
-      overflow: hidden;
-      max-width: 90vw;
-      max-height: 90vh;
-      min-width: 450px;
-      transform-style: preserve-3d;
-      background-attachment: fixed;
-      filter: drop-shadow(0 0 50px ${popupConfig.borderColor}40);
-    `;
-
-    // Hintergrund-Glanz-Effekt
-    const glowEffect = document.createElement('div');
-    glowEffect.style.cssText = `
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-      animation: glow-rotate 6s linear infinite;
-      pointer-events: none;
-    `;
-
-    // Titel mit verbesserter Typografie und Wort-für-Wort Animation
-    const title = document.createElement('h1');
-    title.style.cssText = `
-      font-size: 5.5rem;
-      font-weight: 900;
-      margin: 0 0 20px 0;
-      font-family: 'Impact', 'Arial Black', 'Segoe UI', Arial, sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 4px;
-      position: relative;
-      z-index: 3;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-    `;
-
-    // Titel-Wörter SOFORT beim Popup-Start animieren
-    const titleWords = popupConfig.title.split(' ');
-    titleWords.forEach((word, index) => {
-      const wordSpan = document.createElement('span');
-      wordSpan.textContent = word;
-      wordSpan.style.cssText = `
-        display: inline-block;
-        color: #FFFFFF;
-        text-shadow: 
-          0 0 10px rgba(255,255,255,0.8),
-          0 0 20px ${popupConfig.borderColor},
-          0 4px 15px rgba(0,0,0,0.7);
-        font-weight: 900;
-        opacity: 0;
-        transform: scale(0.5) translateY(15px);
-        animation: 
-          word-pop-in ${TITLE_ANIMATION_CONFIG?.wordDuration || 600}ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
-          title-glow 2s ease-in-out infinite alternate;
-        animation-delay: ${index * currentWordDelay}ms, ${index * currentWordDelay + (TITLE_ANIMATION_CONFIG?.wordDuration || 600)}ms;
-        filter: drop-shadow(0 0 8px ${popupConfig.borderColor});
-      `;
-      title.appendChild(wordSpan);
-      
-      // Fallback: Falls CSS-Animation fehlschlägt, manuell einblenden
-      setTimeout(() => {
-        if (getComputedStyle(wordSpan).opacity === '0') {
-          wordSpan.style.transition = 'all 0.3s ease-out';
-          wordSpan.style.opacity = '1';
-          wordSpan.style.transform = 'scale(1) translateY(0)';
+        // Überprüfe auch ob Symbole korrekt angezeigt werden
+        const emptySymbols = Array.from(strip.children).filter(el => !el.textContent || el.textContent.trim() === '');
+        if (emptySymbols.length > 0) {
+          console.warn(`🎰 Reel ${index + 1} hat ${emptySymbols.length} leere Symbole! Fülle neu...`);
+          needsReset = true;
         }
-      }, (index * currentWordDelay) + 800);
+      }
     });
+    
+    if (needsReset) {
+      console.log('🎰 Setze leere Reels zurück...');
+      fillInitialReels();
+    }
+  }
 
-    // Multiplikator-Anzeige mit verbesserter Lesbarkeit
-    const multiplierText = document.createElement('div');
-    multiplierText.textContent = popupConfig.multiplier;
-    multiplierText.style.cssText = `
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin: 0 0 20px 0;
-      color: #FFFFFF;
-      text-shadow: 
-        0 0 8px rgba(255,255,255,0.6),
-        0 2px 10px rgba(0,0,0,0.8);
-      font-family: 'Segoe UI', Arial, sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      opacity: 0;
-      animation: multiplier-pulse 1.5s ease-in-out infinite;
-      filter: drop-shadow(0 0 6px ${popupConfig.borderColor});
-      transform: translateY(10px);
-    `;
+  // Globale Debug-Funktionen erweitern
+  if (window.audioDebug) {
+    window.audioDebug.checkReels = checkReelState;
+    window.audioDebug.resetReels = resetReelsIfEmpty;
+    window.audioDebug.refillReels = fillInitialReels;
+  }
 
-    // Multiplikator direkt nach Popup-Start einblenden (konfigurierbar)
-    setTimeout(() => {
-      multiplierText.style.transition = 'all 0.6s ease-out';
-      multiplierText.style.opacity = '1';
-      multiplierText.style.transform = 'translateY(0)';
-    }, TITLE_ANIMATION_CONFIG?.multiplierDelay || 800);
+  // ===== ENDE DEBUG-FUNKTIONEN =====
 
-    // Gewinnbetrag mit Counter-Animation und verbesserter Lesbarkeit
-    const winAmountEl = document.createElement('h2');
-    winAmountEl.style.cssText = `
-      font-size: 3.2rem;
-      font-weight: 700;
-      margin: 0 0 15px 0;
-      color: #FFFFFF;
-      text-shadow: 
-        0 0 12px rgba(255,255,255,0.8),
-        0 3px 15px rgba(0,0,0,0.8);
-      font-family: 'Segoe UI', Arial, sans-serif;
-      position: relative;
-      z-index: 2;
-      filter: drop-shadow(0 0 8px ${popupConfig.borderColor});
-      opacity: 0;
-    `;
-
-    // Startwert für Gewinnbetrag anzeigen
-    winAmountEl.textContent = '0€ GEWONNEN!';
-
-    // Counter-Animation für Gewinnbetrag - VERZÖGERT starten
-    const startCounterAfterTitle = () => {
-      // Gewinnbetrag einblenden
-      winAmountEl.style.transition = 'opacity 0.5s ease-in-out';
-      winAmountEl.style.opacity = '1';
-      
-      // Nach kurzer Pause mit dem Zählen beginnen
-      setTimeout(() => {
-        let currentAmount = 0;
-        const targetAmount = winAmount;
-        const countDuration = Math.min(2000, Math.max(800, targetAmount / 5));
-        const countIncrement = targetAmount / (countDuration / 50);
-        
-        const countInterval = setInterval(() => {
-          currentAmount += countIncrement;
-          if (currentAmount >= targetAmount) {
-            currentAmount = targetAmount;
-            clearInterval(countInterval);
-            winAmountEl.style.animation = 'amount-highlight 1s ease-in-out';
+  // Regelmäßige Überprüfung der Reel-Integrität
+  function scheduleReelIntegrityCheck() {
+    setInterval(() => {
+      if (!spinning) {
+        // Prüfe nur wenn nicht gerade gespinnt wird
+        let needsRepair = false;
+        strips.forEach((strip, index) => {
+          if (strip.children.length !== 3) {
+            console.warn(`🎰 Integritätsprüfung: Reel ${index + 1} hat ${strip.children.length} statt 3 Symbole`);
+            needsRepair = true;
+          } else {
+            // Prüfe ob alle Symbole gültigen Inhalt haben
+            const symbols = Array.from(strip.children).map(el => el.textContent);
+            const invalidSymbols = symbols.filter(sym => !sym || sym.trim() === '');
+            if (invalidSymbols.length > 0) {
+              console.warn(`🎰 Integritätsprüfung: Reel ${index + 1} hat ungültige Symbole`);
+              needsRepair = true;
+            }
           }
-          winAmountEl.textContent = `${Math.floor(currentAmount).toLocaleString()}€ GEWONNEN!`;
-        }, 50);
-      }, 300);
-    };
-
-    // Starte Counter nach konfigurierbarer Zeit
-    setTimeout(startCounterAfterTitle, TITLE_ANIMATION_CONFIG?.counterStartDelay || 1200);
-
-    // Kombination mit verbessertem Design
-    const comboContainer = document.createElement('div');
-    comboContainer.style.cssText = `
-      background: linear-gradient(135deg, 
-        rgba(255,255,255,0.25) 0%, 
-        rgba(255,255,255,0.1) 50%, 
-        rgba(255,255,255,0.25) 100%);
-      border-radius: 20px;
-      padding: 30px;
-      margin: 30px 0;
-      backdrop-filter: blur(20px) brightness(1.2);
-      border: 3px solid rgba(255,255,255,0.4);
-      position: relative;
-      z-index: 2;
-      box-shadow: 
-        0 20px 60px rgba(0,0,0,0.4),
-        inset 0 0 30px rgba(255,255,255,0.2);
-      transform-style: preserve-3d;
-    `;
-
-    const comboLabel = document.createElement('div');
-    comboLabel.textContent = '🏆 GEWINN-KOMBINATION 🏆';
-    comboLabel.style.cssText = `
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: rgba(255,255,255,0.95);
-      margin-bottom: 15px;
-      letter-spacing: 2px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.7);
-      animation: label-shimmer 2s ease-in-out infinite;
-    `;
-
-    const comboText = document.createElement('div');
-    comboText.textContent = combination;
-    comboText.style.cssText = `
-      font-size: 4rem;
-      color: #FFFFFF;
-      text-shadow: 
-        0 0 20px ${popupConfig.borderColor},
-        0 4px 20px rgba(0,0,0,0.8),
-        0 0 40px ${popupConfig.borderColor}80;
-      letter-spacing: 20px;
-      animation: combo-bounce 1.8s ease-in-out infinite, combo-glow 3s ease-in-out infinite alternate;
-      filter: drop-shadow(0 0 15px ${popupConfig.borderColor});
-      position: relative;
-    `;
-
-    comboContainer.appendChild(comboLabel);
-    comboContainer.appendChild(comboText);
-
-    // Verbesserter Button
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '🎰 Weiter spielen! 🎰';
-    closeBtn.style.cssText = `
-      background: linear-gradient(135deg, 
-        rgba(255,255,255,0.3) 0%, 
-        rgba(255,255,255,0.1) 50%, 
-        rgba(255,255,255,0.3) 100%);
-      border: 4px solid rgba(255,255,255,0.6);
-      color: #FFFFFF;
-      padding: 22px 50px;
-      font-size: 1.6rem;
-      font-weight: 900;
-      border-radius: 20px;
-      cursor: pointer;
-      margin-top: 35px;
-      backdrop-filter: blur(20px) brightness(1.3);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      font-family: 'Impact', 'Arial Black', 'Segoe UI', Arial, sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      position: relative;
-      z-index: 3;
-      box-shadow: 
-        0 12px 40px rgba(0,0,0,0.4),
-        0 0 30px rgba(255,255,255,0.3),
-        inset 0 0 20px rgba(255,255,255,0.2);
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-      overflow: hidden;
-    `;
-
-    // Hinzufügung eines animierten Hintergrund-Elements für den Button
-    const buttonBg = document.createElement('div');
-    buttonBg.style.cssText = `
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-      animation: button-shine 3s linear infinite;
-      pointer-events: none;
-    `;
-    closeBtn.appendChild(buttonBg);
-
-    closeBtn.addEventListener('mouseenter', () => {
-      closeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.5) 100%)';
-      closeBtn.style.transform = 'scale(1.12) translateY(-4px) rotateX(5deg)';
-      closeBtn.style.boxShadow = `
-        0 20px 60px rgba(0,0,0,0.5),
-        0 0 50px rgba(255,255,255,0.4),
-        inset 0 0 30px rgba(255,255,255,0.3),
-        0 0 100px ${popupConfig.borderColor}60`;
-      closeBtn.style.borderColor = popupConfig.borderColor;
-    });
-
-    closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.3) 100%)';
-      closeBtn.style.transform = 'scale(1) translateY(0) rotateX(0deg)';
-      closeBtn.style.boxShadow = `
-        0 12px 40px rgba(0,0,0,0.4),
-        0 0 30px rgba(255,255,255,0.3),
-        inset 0 0 20px rgba(255,255,255,0.2)`;
-      closeBtn.style.borderColor = 'rgba(255,255,255,0.6)';
-    });
-
-    closeBtn.addEventListener('click', () => {
-      popup.style.animation = 'popup-dramatic-disappear 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
-      setTimeout(() => {
-        if (popup.parentNode) {
-          popup.parentNode.removeChild(popup);
+        });
+        
+        if (needsRepair) {
+          console.log('🎰 Integritätsprüfung: Repariere Reels...');
+          fillInitialReels();
         }
-      }, 500);
-    });
-
-    // Erweiterte Partikel-Effekte
-    const particleContainer = document.createElement('div');
-    particleContainer.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-    `;
-
-    // Mehr Partikel mit verschiedenen Animationen
-    const particles = popupConfig.particles.split('');
-    const particleCount = type === 'jackpot' ? 35 : type === 'mega' ? 28 : type === 'big' ? 22 : 18;
-    
-    for (let i = 0; i < particleCount; i++) {
-      const particle = document.createElement('div');
-      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
-      
-      const size = Math.random() * 3 + 1.2;
-      const animationType = ['particle-float', 'particle-spiral', 'particle-bounce'][Math.floor(Math.random() * 3)];
-      const duration = Math.random() * 5 + 2;
-      const delay = Math.random() * 4;
-      
-      particle.style.cssText = `
-        position: absolute;
-        font-size: ${size}rem;
-        color: #FFFFFF;
-        text-shadow: 
-          0 0 20px currentColor, 
-          0 0 40px currentColor,
-          0 0 60px ${popupConfig.borderColor};
-        animation: ${animationType} ${duration}s infinite linear;
-        animation-delay: ${delay}s;
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 100}%;
-        filter: drop-shadow(0 0 15px currentColor) hue-rotate(${Math.random() * 60}deg);
-        opacity: ${0.7 + Math.random() * 0.3};
-        z-index: 1;
-      `;
-      particleContainer.appendChild(particle);
-    }
-
-    // Firework-Effekt für große Gewinne
-    if (type === 'jackpot' || type === 'mega') {
-      createFireworkEffect(particleContainer, popupConfig.borderColor);
-    }
-
-    // Zusammenbauen
-    content.appendChild(glowEffect);
-    content.appendChild(particleContainer);
-    content.appendChild(title);
-    content.appendChild(multiplierText);
-    content.appendChild(winAmountEl);
-    content.appendChild(comboContainer);
-    content.appendChild(closeBtn);
-    popup.appendChild(content);
-    document.body.appendChild(popup);
-
-    // Auto-close mit visueller Countdown
-    createCountdownTimer(closeBtn, popupConfig.duration);
-
-    // Escape Key zum Schließen
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && popup.parentNode) {
-        closeBtn.click();
-        document.removeEventListener('keydown', handleEscape);
       }
-    };
-    document.addEventListener('keydown', handleEscape);
+    }, 5000); // Prüfe alle 5 Sekunden
   }
+  
+  // Starte die Integritätsprüfung
+  scheduleReelIntegrityCheck();
 
-  // Hilfsfunktionen für erweiterte Effekte
-  function playWinSound(type) {
-    // Placeholder für Sound-Effekte - kann später implementiert werden
-    console.log(`🔊 Playing ${type} win sound`);
+  // Debug: Überprüfe ob alle wichtigen Elemente gefunden wurden
+  console.log('🎰 Element Check:');
+  console.log('spinBtn:', spinBtn);
+  console.log('betMinus:', betMinus);
+  console.log('betPlus:', betPlus);
+  console.log('betAmountEl:', betAmountEl);
+  
+  if (!spinBtn) {
+    console.error('❌ Spin Button nicht gefunden!');
   }
-
-  function createFireworkEffect(container, color) {
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
-        const firework = document.createElement('div');
-        firework.style.cssText = `
-          position: absolute;
-          width: 6px;
-          height: 6px;
-          background: ${color};
-          border-radius: 50%;
-          left: ${Math.random() * 100}%;
-          top: ${Math.random() * 100}%;
-          animation: firework-explode 2s ease-out forwards;
-          box-shadow: 0 0 20px ${color};
-        `;
-        container.appendChild(firework);
-        
-        setTimeout(() => {
-          if (firework.parentNode) {
-            firework.parentNode.removeChild(firework);
-          }
-        }, 2000);
-      }, i * 400);
-    }
+  if (!betMinus || !betPlus) {
+    console.error('❌ Bet Buttons nicht gefunden!');
   }
-
-  function createCountdownTimer(button, duration) {
-    let remaining = duration / 1000;
-    const originalText = button.textContent;
-    
-    const countdown = setInterval(() => {
-      remaining--;
-      if (remaining > 0) {
-        button.textContent = `${originalText} (${remaining}s)`;
-      } else {
-        clearInterval(countdown);
-        button.click();
-      }
-    }, 1000);
-    
-    // Stop countdown wenn manuell geschlossen
-    button.addEventListener('click', () => {
-      clearInterval(countdown);
-    }, { once: true });
+  if (!betAmountEl) {
+    console.error('❌ Bet Amount Element nicht gefunden!');
   }
-
-  // CSS Animationen für Premium Popups
-  const popupStyles = document.createElement('style');
-  popupStyles.textContent = `
-    @keyframes popup-dramatic-appear {
-      0% { 
-        opacity: 0; 
-        transform: scale(0.1) rotateY(180deg) rotateX(45deg);
-        filter: blur(30px) brightness(0.5);
-      }
-      30% {
-        opacity: 0.6;
-        transform: scale(0.8) rotateY(90deg) rotateX(20deg);
-        filter: blur(10px) brightness(0.8);
-      }
-      60% {
-        opacity: 0.9;
-        transform: scale(1.15) rotateY(30deg) rotateX(-5deg);
-        filter: blur(2px) brightness(1.2);
-      }
-      100% { 
-        opacity: 1; 
-        transform: scale(1) rotateY(0deg) rotateX(0deg);
-        filter: blur(0px) brightness(1);
-      }
-    }
-    
-    @keyframes popup-dramatic-disappear {
-      0% { 
-        opacity: 1; 
-        transform: scale(1) rotateY(0deg) rotateX(0deg);
-        filter: blur(0px);
-      }
-      100% { 
-        opacity: 0; 
-        transform: scale(0.3) rotateY(-120deg) rotateX(30deg);
-        filter: blur(20px);
-      }
-    }
-    
-    @keyframes gradient-shift {
-      0%, 100% { 
-        background-position: 0% 50%; 
-        filter: hue-rotate(0deg);
-      }
-      25% { 
-        background-position: 100% 0%; 
-        filter: hue-rotate(10deg);
-      }
-      50% { 
-        background-position: 100% 100%; 
-        filter: hue-rotate(0deg);
-      }
-      75% { 
-        background-position: 0% 100%; 
-        filter: hue-rotate(-10deg);
-      }
-    }
-    
-    @keyframes glow-rotate {
-      0% { transform: rotate(0deg) scale(1); }
-      50% { transform: rotate(180deg) scale(1.1); }
-      100% { transform: rotate(360deg) scale(1); }
-    }
-    
-    @keyframes title-glow {
-      0% { 
-        filter: brightness(1) drop-shadow(0 0 8px currentColor); 
-        transform: scale(1);
-      }
-      100% { 
-        filter: brightness(1.2) drop-shadow(0 0 15px currentColor); 
-        transform: scale(1.01);
-      }
-    }
-    
-    @keyframes title-rainbow {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 300% 50%; }
-    }
-    
-    @keyframes word-pop-in {
-      0% {
-        opacity: 0;
-        transform: scale(0.5) translateY(15px);
-        filter: blur(2px);
-      }
-      60% {
-        opacity: 0.9;
-        transform: scale(1.1) translateY(-3px);
-        filter: blur(0px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-        filter: blur(0px);
-      }
-    }
-    
-    @keyframes label-shimmer {
-      0%, 100% { 
-        opacity: 0.95; 
-        transform: translateX(0);
-      }
-      50% { 
-        opacity: 1; 
-        transform: translateX(2px);
-      }
-    }
-    
-    @keyframes button-shine {
-      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-    }
-    
-    @keyframes multiplier-pulse {
-      0%, 100% { 
-        transform: scale(1); 
-        opacity: 0.9; 
-        filter: brightness(1);
-      }
-      50% { 
-        transform: scale(1.03); 
-        opacity: 1; 
-        filter: brightness(1.1);
-      }
-    }
-    
-    @keyframes amount-highlight {
-      0% { 
-        transform: scale(1); 
-        filter: brightness(1);
-      }
-      50% { 
-        transform: scale(1.15); 
-        filter: brightness(1.5) drop-shadow(0 0 30px currentColor);
-      }
-      100% { 
-        transform: scale(1); 
-        filter: brightness(1);
-      }
-    }
-    
-    @keyframes combo-bounce {
-      0%, 100% { 
-        transform: translateY(0) scale(1); 
-      }
-      25% { 
-        transform: translateY(-8px) scale(1.02); 
-      }
-      50% { 
-        transform: translateY(-4px) scale(1.05); 
-      }
-      75% { 
-        transform: translateY(-2px) scale(1.02); 
-      }
-    }
-    
-    @keyframes combo-glow {
-      0% { 
-        filter: drop-shadow(0 0 8px currentColor) brightness(1); 
-      }
-      100% { 
-        filter: drop-shadow(0 0 15px currentColor) brightness(1.1); 
-      }
-    }
-    
-    @keyframes jackpot-mega-pulse {
-      0%, 100% { 
-        transform: scale(1) rotateZ(0deg); 
-        filter: brightness(1);
-      }
-      25% { 
-        transform: scale(1.03) rotateZ(1deg); 
-        filter: brightness(1.1);
-      }
-      50% { 
-        transform: scale(1.06) rotateZ(0deg); 
-        filter: brightness(1.2);
-      }
-      75% { 
-        transform: scale(1.03) rotateZ(-1deg); 
-        filter: brightness(1.1);
-      }
-    }
-    
-    @keyframes mega-explosive {
-      0%, 100% { 
-        transform: scale(1) rotateZ(0deg); 
-        filter: hue-rotate(0deg);
-      }
-      20% { 
-        transform: scale(1.04) rotateZ(2deg); 
-        filter: hue-rotate(10deg);
-      }
-      40% { 
-        transform: scale(0.98) rotateZ(-2deg); 
-        filter: hue-rotate(-10deg);
-      }
-      60% { 
-        transform: scale(1.02) rotateZ(1deg); 
-        filter: hue-rotate(5deg);
-      }
-      80% { 
-        transform: scale(1.01) rotateZ(-1deg); 
-        filter: hue-rotate(-5deg);
-      }
-    }
-    
-    @keyframes big-spectacular {
-      0%, 100% { 
-        transform: scale(1) rotateY(0deg); 
-        filter: saturate(1);
-      }
-      33% { 
-        transform: scale(1.02) rotateY(2deg); 
-        filter: saturate(1.2);
-      }
-      66% { 
-        transform: scale(0.99) rotateY(-2deg); 
-        filter: saturate(1.1);
-      }
-    }
-    
-    @keyframes super-celebration {
-      0%, 100% { 
-        transform: translateX(0) scale(1); 
-      }
-      20% { 
-        transform: translateX(-3px) scale(1.01); 
-      }
-      40% { 
-        transform: translateX(3px) scale(0.99); 
-      }
-      60% { 
-        transform: translateX(-2px) scale(1.01); 
-      }
-      80% { 
-        transform: translateX(2px) scale(1); 
-      }
-    }
-    
-    @keyframes normal-celebration {
-      0%, 100% { 
-        filter: brightness(1) hue-rotate(0deg); 
-        transform: scale(1);
-      }
-      50% { 
-        filter: brightness(1.1) hue-rotate(10deg); 
-        transform: scale(1.01);
-      }
-    }
-    
-    @keyframes particle-float {
-      0% { 
-        transform: translateY(0) rotate(0deg) scale(0); 
-        opacity: 0; 
-      }
-      10% { 
-        transform: translateY(-20px) rotate(36deg) scale(1); 
-        opacity: 1; 
-      }
-      90% { 
-        transform: translateY(-120px) rotate(324deg) scale(1); 
-        opacity: 1; 
-      }
-      100% { 
-        transform: translateY(-150px) rotate(360deg) scale(0); 
-        opacity: 0; 
-      }
-    }
-    
-    @keyframes particle-spiral {
-      0% { 
-        transform: translateY(0) translateX(0) rotate(0deg) scale(0); 
-        opacity: 0; 
-      }
-      10% { 
-        transform: translateY(-10px) translateX(10px) rotate(36deg) scale(1); 
-        opacity: 1; 
-      }
-      25% { 
-        transform: translateY(-30px) translateX(-15px) rotate(90deg) scale(1.2); 
-        opacity: 1; 
-      }
-      50% { 
-        transform: translateY(-60px) translateX(20px) rotate(180deg) scale(1); 
-        opacity: 1; 
-      }
-      75% { 
-        transform: translateY(-90px) translateX(-10px) rotate(270deg) scale(1.1); 
-        opacity: 1; 
-      }
-      90% { 
-        transform: translateY(-110px) translateX(5px) rotate(324deg) scale(1); 
-        opacity: 1; 
-      }
-      100% { 
-        transform: translateY(-130px) translateX(0) rotate(360deg) scale(0); 
-        opacity: 0; 
-      }
-    }
-    
-    @keyframes particle-bounce {
-      0% { 
-        transform: translateY(0) translateX(0) rotate(0deg) scale(0); 
-        opacity: 0; 
-      }
-      10% { 
-        transform: translateY(-15px) translateX(5px) rotate(45deg) scale(1); 
-        opacity: 1; 
-      }
-      25% { 
-        transform: translateY(-40px) translateX(-10px) rotate(90deg) scale(1.3); 
-        opacity: 1; 
-      }
-      50% { 
-        transform: translateY(-20px) translateX(15px) rotate(180deg) scale(1); 
-        opacity: 1; 
-      }
-      75% { 
-        transform: translateY(-60px) translateX(-5px) rotate(270deg) scale(1.2); 
-        opacity: 1; 
-      }
-      90% { 
-        transform: translateY(-80px) translateX(8px) rotate(315deg) scale(1); 
-        opacity: 1; 
-      }
-      100% { 
-        transform: translateY(-100px) translateX(0) rotate(360deg) scale(0); 
-        opacity: 0; 
-      }
-    }
-    
-    @keyframes firework-explode {
-      0% { 
-        transform: scale(1); 
-        opacity: 1; 
-        filter: brightness(1);
-      }
-      30% { 
-        transform: scale(5); 
-        opacity: 0.9; 
-        filter: brightness(1.5);
-      }
-      60% { 
-        transform: scale(12); 
-        opacity: 0.6; 
-        filter: brightness(1.2);
-      }
-      100% { 
-        transform: scale(20); 
-        opacity: 0; 
-        filter: brightness(0.8);
-      }
-    }
-    
-    /* Responsive Design für mobile Geräte */
-    @media (max-width: 768px) {
-      .popup-content {
-        padding: 40px 50px !important;
-        min-width: 320px !important;
-        margin: 20px !important;
-      }
-      
-      .popup-content h1 {
-        font-size: 3.5rem !important;
-        letter-spacing: 2px !important;
-        gap: 10px !important;
-      }
-      
-      .popup-content h1 span {
-        font-size: 3.5rem !important;
-      }
-      
-      .popup-content h2 {
-        font-size: 2.2rem !important;
-      }
-      
-      .combo-container div:last-child {
-        font-size: 2.8rem !important;
-        letter-spacing: 10px !important;
-      }
-      
-      .popup-content button {
-        padding: 18px 35px !important;
-        font-size: 1.4rem !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .popup-content {
-        padding: 30px 35px !important;
-        min-width: 280px !important;
-        margin: 15px !important;
-      }
-      
-      .popup-content h1 {
-        font-size: 2.8rem !important;
-        letter-spacing: 1px !important;
-        gap: 8px !important;
-      }
-      
-      .popup-content h1 span {
-        font-size: 2.8rem !important;
-      }
-      
-      .popup-content h2 {
-        font-size: 1.9rem !important;
-      }
-      
-      .combo-container div:last-child {
-        font-size: 2.2rem !important;
-        letter-spacing: 6px !important;
-      }
-      
-      .popup-content button {
-        padding: 15px 30px !important;
-        font-size: 1.2rem !important;
-      }
-    }
-    
-    @media (max-width: 360px) {
-      .popup-content {
-        padding: 25px 30px !important;
-        min-width: 260px !important;
-      }
-      
-      .popup-content h1 {
-        font-size: 2.2rem !important;
-        gap: 6px !important;
-      }
-      
-      .popup-content h1 span {
-        font-size: 2.2rem !important;
-      }
-      
-      .popup-content h2 {
-        font-size: 1.6rem !important;
-      }
-      
-      .combo-container div:last-child {
-        font-size: 1.8rem !important;
-        letter-spacing: 4px !important;
-      }
-    }
-  `;
-  document.head.appendChild(popupStyles);
-
-  // ===== ENDE GEWINN-POPUP SYSTEM =====
 });
