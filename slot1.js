@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingText = document.getElementById('loading-text');
     
     const loadingSteps = [
-      { text: 'Initialisiere Spiel...', duration: 400 },
-      { text: 'Lade Grafiken...', duration: 700 },
-      { text: 'Lade Sounds...', duration: 300 },
-      { text: 'Bereite Walzen vor...', duration: 500 },
-      { text: 'Starte Spiel...', duration: 300 }
+      { text: 'Initialisiere Spiel...', duration: 200 },
+      { text: 'Lade Grafiken...', duration: 400 },
+      { text: 'Lade Sounds...', duration: 100 },
+      { text: 'Bereite Walzen vor...', duration: 200 },
+      { text: 'Starte Spiel...', duration: 100 }
     ];
     
     let currentStep = 0;
@@ -1277,90 +1277,222 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('slot1_balance', balance);
   }
 
+  // Enhanced Titel-Animation: Wort für Wort einblenden mit modernen Effekten
+  function animateTitle(title, titleColor) {
+    // Konfiguration für Timing (leicht anpassbar)
+    const WORD_DELAY = 250; // Millisekunden zwischen den Wörtern (reduziert für flüssigere Animation)
+    const WORD_DURATION = 800; // Animationsdauer pro Wort (erhöht für elegantere Animation)
+    
+    const words = title.split(' ');
+    
+    // Titel zurücksetzen und vorbereiten
+    winTitle.innerHTML = '';
+    winTitle.style.color = titleColor;
+    
+    // Container für die Wörter erstellen
+    words.forEach((word, index) => {
+      const wordSpan = document.createElement('span');
+      wordSpan.textContent = word;
+      wordSpan.setAttribute('data-text', word); // Für CSS ::before Content
+      
+      wordSpan.style.cssText = `
+        display: inline-block;
+        opacity: 0;
+        transform: scale(0.2) translateY(30px) rotateX(90deg);
+        transition: all ${WORD_DURATION}ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        margin-right: ${index < words.length - 1 ? '0.4em' : '0'};
+        transform-origin: center bottom;
+        filter: blur(4px);
+      `;
+      winTitle.appendChild(wordSpan);
+      
+      // Animiere jedes Wort mit Verzögerung und verschiedenen Effekten
+      setTimeout(() => {
+        wordSpan.style.opacity = '1';
+        wordSpan.style.transform = 'scale(1) translateY(0) rotateX(0deg)';
+        wordSpan.style.filter = 'blur(0px)';
+        
+        // Zusätzlicher Bounce-Effekt nach der Hauptanimation
+        setTimeout(() => {
+          wordSpan.style.transform = 'scale(1.1) translateY(-5px) rotateX(0deg)';
+          setTimeout(() => {
+            wordSpan.style.transform = 'scale(1) translateY(0) rotateX(0deg)';
+          }, 150);
+        }, WORD_DURATION - 200);
+        
+      }, index * WORD_DELAY);
+    });
+    
+    // Finale Glitzer-Animation nach allen Wörtern
+    setTimeout(() => {
+      words.forEach((_, index) => {
+        const wordSpan = winTitle.children[index];
+        if (wordSpan) {
+          // Füge temporären Glitzer-Effekt hinzu
+          wordSpan.style.animation = 'titleSparkle 1s ease-in-out';
+          setTimeout(() => {
+            wordSpan.style.animation = '';
+          }, 1000);
+        }
+      });
+    }, words.length * WORD_DELAY + WORD_DURATION);
+  }
+
   // Win-Popup System
   const winPopup = document.getElementById('big-win-popup');
   const winPopupOverlay = document.getElementById('win-popup-overlay');
-  const winIcon = document.getElementById('win-icon');
   const winTitle = document.getElementById('win-title');
   const winAmountEl = document.getElementById('win-amount');
-  const winMultiplier = document.getElementById('win-multiplier');
-  const collectBtn = document.getElementById('collect-win');
 
   function showWinPopup(winAmount, betAmount, symbolCombo = null) {
     const multiplier = Math.round(winAmount / betAmount);
     
     // Bestimme Popup-Stil basierend auf Symbolkombination oder Gewinnbetrag
-    let icon, title, titleColor, confettiCount;
+    let title, titleColor, confettiCount, winEmojis;
     
     if (symbolCombo === '🍀🍀🍀') {
       // 🍀 Super Mega Win!
-      icon = '🍀';
       title = 'SUPER MEGA WIN!';
       titleColor = '#2ecc71';
       confettiCount = 60;
+      winEmojis = ['🍀', '💰', '✨', '🎉', '💎', '👑'];
     } else if (symbolCombo === '🔔🔔🔔') {
       // 🔔 Mega Win!
-      icon = '🔔';
       title = 'MEGA WIN!';
       titleColor = '#f39c12';
       confettiCount = 45;
+      winEmojis = ['🔔', '💰', '🎉', '✨', '🔥'];
     } else if (symbolCombo === '💎💎💎') {
       // 💎 Big Win!
-      icon = '💎';
       title = 'BIG WIN!';
       titleColor = '#9b59b6';
       confettiCount = 35;
+      winEmojis = ['💎', '💰', '🎉', '✨'];
     } else {
-      // Fallback für andere große Gewinne (falls showWinPopup ohne symbolCombo aufgerufen wird)
+      // Fallback für andere große Gewinne
       if (winAmount >= 1500) {
-        icon = '🎉';
         title = 'SUPER MEGA WIN!';
         titleColor = '#9b59b6';
         confettiCount = 50;
+        winEmojis = ['🎉', '💰', '✨', '👑'];
       } else if (winAmount >= 750) {
-        icon = '🔥';
         title = 'MEGA WIN!';
         titleColor = '#e74c3c';
         confettiCount = 35;
+        winEmojis = ['🔥', '💰', '🎉', '✨'];
       } else if (winAmount >= 200) {
-        icon = '✨';
         title = 'BIG WIN!';
         titleColor = '#f4d03f';
         confettiCount = 25;
+        winEmojis = ['✨', '💰', '🎉'];
       } else {
-        // Kein Popup für Gewinne unter 200€
         return;
       }
     }
 
-    // Popup-Inhalt setzen
-    winIcon.textContent = icon;
-    winTitle.textContent = title;
-    winTitle.style.color = titleColor;
-    winAmountEl.textContent = `${winAmount} €`;
-    winMultiplier.textContent = `${multiplier}x Einsatz`;
-
-    // Overlay und Popup anzeigen
+    // Overlay anzeigen
     winPopupOverlay.classList.add('show');
-    winPopup.classList.add('show');
     
-    // Celebration Animation nach kurzer Verzögerung
+    // Popup erscheinen lassen
     setTimeout(() => {
-      winPopup.classList.add('celebrate');
-    }, 300);
+      winPopup.classList.add('show');
+    }, 100);
 
-    // Konfetti-Effekt
-    createConfetti(confettiCount);
+    // Animiere Titel Wort für Wort
+    animateTitle(title, titleColor);
+
+    // Starte Gewinn-Emoji-Wasserfall
+    startWinEmojiWaterfall(winEmojis, 8000); // 8 Sekunden Gewinn-Emojis
+
+    // Animated Counter für die Summe
+    setTimeout(() => {
+      animateWinAmount(0, winAmount, 3000); // 3 Sekunden zum Hochzählen
+    }, 1000); // Start nach 1 Sekunde
+
+    // Gestaffelter Konfetti-Effekt
+    setTimeout(() => createConfetti(Math.floor(confettiCount * 0.6)), 200);
+    setTimeout(() => createConfetti(Math.floor(confettiCount * 0.4)), 800);
+
+    // Automatisches Schließen nach allen Animationen (ca. 8 Sekunden)
+    setTimeout(() => {
+      hideWinPopup();
+    }, 8500);
 
     // Sound-Effekt
     if (musicStarted) {
-      activateSpinMusic(); // Aktiviere Spin-Musik für Celebration
+      activateSpinMusic();
     }
   }
 
+  // Neue Funktion: Gewinn-Betrag hochzählen
+  function animateWinAmount(startAmount, endAmount, duration) {
+    const startTime = Date.now();
+    const difference = endAmount - startAmount;
+    
+    function updateAmount() {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function für smoothes Zählen
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const currentAmount = Math.floor(startAmount + (difference * easeOut));
+      
+      winAmountEl.textContent = `${currentAmount.toLocaleString()} €`;
+      
+      if (progress < 1) {
+        requestAnimationFrame(updateAmount);
+      } else {
+        // Finale Summe sicherstellen
+        winAmountEl.textContent = `${endAmount.toLocaleString()} €`;
+      }
+    }
+    
+    updateAmount();
+  }
+
+  // Optimized Win Emoji Waterfall
+  function startWinEmojiWaterfall(emojis, duration) {
+    const startTime = Date.now();
+    let winEmojiCount = 0;
+    const maxWinEmojis = 30; // Limit total emojis for performance
+    
+    function spawnWinEmoji() {
+      if (Date.now() - startTime > duration || winEmojiCount >= maxWinEmojis) {
+        return;
+      }
+      
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      const drop = getPooledEmoji();
+      
+      drop.className = 'emoji-drop win-emoji';
+      drop.textContent = emoji;
+      drop.style.display = 'block';
+      drop.style.left = (Math.random() * 100) + 'vw'; // Simplified positioning
+      drop.style.fontSize = (Math.random() * (4.4 - 2.5) + 2.5) + 'rem'; // Increased size range (2.5-4.4rem)
+      drop.style.animationDuration = '1.5s'; // Fixed shorter duration
+      drop.style.opacity = '0.7'; // Fixed opacity for consistency
+      drop.style.animation = 'optimizedWinEmojiDrop 1.5s linear forwards';
+      
+      winEmojiCount++;
+      
+      drop.addEventListener('animationend', () => {
+        returnEmojiToPool(drop);
+        winEmojiCount--;
+      }, { once: true });
+      
+      // Reduced spawn frequency for performance
+      setTimeout(spawnWinEmoji, Math.random() * 200 + 100);
+    }
+    
+    spawnWinEmoji();
+  }
+
   function hideWinPopup() {
-    winPopup.classList.remove('show', 'celebrate');
+    winPopup.classList.remove('show');
     winPopupOverlay.classList.remove('show');
+    
+    // Cleanup any remaining win emojis for performance
+    cleanupWinEmojis();
     
     // Reset Emoji-Zustand
     setTimeout(() => {
@@ -1369,6 +1501,26 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }, 1000);
   }
+
+  // Cleanup function to prevent memory leaks and improve performance
+  function cleanupWinEmojis() {
+    const winEmojis = emojiWaterfall.querySelectorAll('.win-emoji');
+    winEmojis.forEach(emoji => {
+      returnEmojiToPool(emoji);
+    });
+  }
+
+  // Periodic cleanup to prevent emoji buildup
+  setInterval(() => {
+    const allEmojis = emojiWaterfall.querySelectorAll('.emoji-drop');
+    if (allEmojis.length > 50) { // If too many emojis, clean up some
+      Array.from(allEmojis).slice(0, 20).forEach(emoji => {
+        if (emoji.style.display !== 'none') {
+          returnEmojiToPool(emoji);
+        }
+      });
+    }
+  }, 5000); // Check every 5 seconds
 
   function createConfetti(count = 30) {
     for (let i = 0; i < count; i++) {
@@ -1399,8 +1551,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Event-Listener für Collect-Button
-  collectBtn.addEventListener('click', hideWinPopup);
+  // Event-Listener für Overlay-Klick zum vorzeitigen Schließen
   winPopupOverlay.addEventListener('click', hideWinPopup);
 
   // ESC-Taste zum Schließen
@@ -1450,35 +1601,60 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialisiere Seitenanimationen
   updateSideEmojis('idle');
 
-  // Verbesserter Emoji-Wasserfall
+  // Optimized Emoji Waterfall - Performance Enhanced
   const emojiWaterfall = document.getElementById('emoji-waterfall');
-  const waterfallEmojis = ['🍒','🍋','🍊','🍉','⭐','🔔','🍇','💎','🍀','💦','🌊','🫧','🦋','🪐','✨','🌈'];
+  const waterfallEmojis = ['🍒','🍋','🍊','🍉','⭐','🔔','🍇','💎','🍀'];
+  let emojiPool = []; // Object pool for reusing emoji elements
+  
+  // Create emoji pool for better performance
+  function createEmojiPool() {
+    for (let i = 0; i < 20; i++) {
+      const emoji = document.createElement('div');
+      emoji.className = 'emoji-drop';
+      emoji.style.display = 'none';
+      emojiPool.push(emoji);
+      emojiWaterfall.appendChild(emoji);
+    }
+  }
+  
+  function getPooledEmoji() {
+    for (let emoji of emojiPool) {
+      if (emoji.style.display === 'none') {
+        return emoji;
+      }
+    }
+    // If pool is exhausted, create new one (fallback)
+    const emoji = document.createElement('div');
+    emoji.className = 'emoji-drop';
+    emojiWaterfall.appendChild(emoji);
+    return emoji;
+  }
+  
+  function returnEmojiToPool(emoji) {
+    emoji.style.display = 'none';
+    emoji.style.animation = '';
+    emoji.className = 'emoji-drop';
+  }
+  
   function spawnEmojiDrop() {
     const emoji = waterfallEmojis[Math.floor(Math.random() * waterfallEmojis.length)];
-    const drop = document.createElement('div');
-    drop.className = 'emoji-drop';
+    const drop = getPooledEmoji();
+    
     drop.textContent = emoji;
-    // Zufällige horizontale Position (leicht außerhalb, -5vw bis 105vw)
-    drop.style.left = (Math.random() * 110 - 5) + 'vw';
-    // Zufällige Größe
-    const size = Math.random() * 2.2 + 1.2;
-    drop.style.fontSize = size + 'rem';
-    // Zufällige Animationsdauer (5-7s)
-    drop.style.animationDuration = (Math.random() * 2 + 5) + 's';
-    // Leicht zufällige Verzögerung für flüssigen Effekt
-    drop.style.animationDelay = (Math.random() * 0.7) + 's';
-    // Zufällige Drehung
-    const rot = Math.floor(Math.random() * 360);
-    drop.style.setProperty('--rot', rot + 'deg');
-    // Zufällige Wellenbewegung (seitliche Bewegung)
-    const wave = Math.floor(Math.random() * 60 - 30); // -30px bis +30px
-    drop.style.setProperty('--wave', wave + 'px');
-    // Zufällige Transparenz
-    drop.style.opacity = (Math.random() * 0.5 + 0.6).toFixed(2);
-    emojiWaterfall.appendChild(drop);
-    drop.addEventListener('animationend', () => drop.remove());
+    drop.style.display = 'block';
+    drop.style.left = (Math.random() * 100) + 'vw'; // Simplified positioning
+    drop.style.fontSize = (Math.random() * 0.6 + 1.6) + 'rem'; // Increased size range (1.6-2.2rem)
+    drop.style.animationDuration = '2s'; // Fixed duration for consistency
+    drop.style.opacity = (Math.random() * 0.3 + 0.3).toFixed(1); // Lighter opacity
+    
+    // Remove complex custom properties for performance
+    drop.style.animation = 'optimizedEmojiDrop 2s linear forwards';
+    
+    drop.addEventListener('animationend', () => returnEmojiToPool(drop), { once: true });
   }
-  setInterval(spawnEmojiDrop, 180); // Dichte erhöht, aber nicht zu viel
+  
+  createEmojiPool();
+  setInterval(spawnEmojiDrop, 300); // Reduced frequency for better performance
 
   // Zufällige Emoji-Wechsel alle 30 Sekunden im Idle-Zustand
   function randomEmojiChange() {

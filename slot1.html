@@ -64,18 +64,16 @@
                 <button id="spin"></button>
                 <div class="result" id="result"></div>
             </div>
-
-            
-            <!-- Enhanced Big Win Popup -->
-            <div class="win-popup-overlay" id="win-popup-overlay"></div>
-            <div class="big-win-popup" id="big-win-popup">
-                <div class="win-icon" id="win-icon">🎉</div>
-                <h2 id="win-title">GROSSER GEWINN!</h2>
-                <div class="win-amount" id="win-amount">0 €</div>
-                <div class="win-multiplier" id="win-multiplier"></div>
-                <button class="collect-btn" id="collect-win">Sammeln</button>
-            </div>
         </main>
+    </div>
+
+    <!-- Enhanced Big Win Popup - Moved outside main to be direct child of body -->
+    <div class="win-popup-overlay" id="win-popup-overlay"></div>
+    <div class="big-win-popup" id="big-win-popup">
+        <h2 id="win-title">GROSSER GEWINN!</h2>
+        <div class="win-amount-container">
+            <div class="win-amount" id="win-amount">0 €</div>
+        </div>
     </div>
 </body>
 </html>
