@@ -79,7 +79,7 @@ main {
 .slot-machine {
   width: 90%;
   max-width: 760px; /* further reduced from 600px */
-  min-height: 380px; /* increased from 350px to accommodate taller reels */
+  min-height: 420px; /* increased from 380px to accommodate taller reels */
   background: rgba(26, 26, 46, 0.85);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -135,7 +135,7 @@ main {
 
 .reel {
   flex: 1;
-  height: 200px; /* increased from 170px for more elongated look */
+  height: 220px; /* increased from 200px for better visibility */
   background: rgba(22, 33, 62, 0.6);
   border-radius: 10px; /* reduced from 12px */
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -164,7 +164,7 @@ main {
 
 .reel-window {
   width: 100%;
-  height: 200px; /* increased from 170px to match reel height */
+  height: 240px; /* increased to match reel height */
   overflow: hidden;
   position: relative;
 }
