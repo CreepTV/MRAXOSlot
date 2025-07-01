@@ -5,6 +5,71 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ]
+    ],
+    "rewrites": [
+      {
+        "source": "/login",
+        "destination": "/Login/login.html"
+      },
+      {
+        "source": "/register",
+        "destination": "/Login/login.html"
+      },
+      {
+        "source": "/EmojiBonanza",
+        "destination": "/SlotMachine1/slot1.html"
+      },
+      {
+        "source": "/emojibonanza",
+        "destination": "/SlotMachine1/slot1.html"
+      },
+      {
+        "source": "/account",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/profile",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/stats",
+        "destination": "/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(mp3|wav|m4a)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=604800"
+          }
+        ]
+      }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
   }
 }

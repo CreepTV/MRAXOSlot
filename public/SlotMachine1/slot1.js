@@ -166,16 +166,16 @@ document.addEventListener('DOMContentLoaded', async function() {
   // ==============================================
   
   // Audio-Objekte
-  const startSound = new Audio('data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
+  const startSound = new Audio('../data/sounds/ElevenSoundEffects/Slot_Maschine_Start.mp3');
   startSound.volume = 0.2;
   
   const musicStems = {
-    vocals: new Audio('data/sounds/Electro SwingStems/vocals.m4a'),
+    vocals: new Audio('../data/sounds/Electro SwingStems/vocals.m4a'),
     bass: new Audio('data/sounds/Electro SwingStems/bass.m4a'),
-    drums: new Audio('data/sounds/Electro SwingStems/drums.m4a'),
-    piano: new Audio('data/sounds/Electro SwingStems/piano.m4a'),
-    guitar: new Audio('data/sounds/Electro SwingStems/guitar.m4a'),
-    other: new Audio('data/sounds/Electro SwingStems/other.m4a')
+    drums: new Audio('../data/sounds/Electro SwingStems/drums.m4a'),
+    piano: new Audio('../data/sounds/Electro SwingStems/piano.m4a'),
+    guitar: new Audio('../data/sounds/Electro SwingStems/guitar.m4a'),
+    other: new Audio('../data/sounds/Electro SwingStems/other.m4a')
   };
 
   // ZENTRALE STEUERUNGSVARIABLEN
