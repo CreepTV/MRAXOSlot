@@ -117,22 +117,24 @@ async function checkUserExists(email) {
     console.log('🔍 Checking if user exists:', email);
     
     try {
-        // Firebase doesn't provide a direct way to check if email exists
-        // We'll use fetchSignInMethodsForEmail which is deprecated but still works
+        // Note: fetchSignInMethodsForEmail is deprecated and unreliable
+        // This is now only used for debug purposes
         const methods = await auth.fetchSignInMethodsForEmail(email);
         console.log('🔍 Sign-in methods for', email, ':', methods);
         
         return {
             exists: methods.length > 0,
-            methods: methods
+            methods: methods,
+            note: 'This method is deprecated and may not be reliable'
         };
     } catch (error) {
         console.error('❌ Error checking user existence:', error);
         
-        // If the method is not available, return uncertain
+        // Return uncertain status since this method is unreliable
         return {
             exists: null,
-            error: error.message
+            error: error.message,
+            note: 'Method not available or unreliable'
         };
     }
 }
@@ -337,6 +339,30 @@ function getCurrentUser() {
     return auth.currentUser;
 }
 
+// Better debug function to test login with specific credentials
+async function debugTestLogin(email, password) {
+    console.log('🧪 Debug: Testing login for:', email);
+    
+    try {
+        const result = await loginUser(email, password);
+        console.log('🧪 Debug login result:', result);
+        
+        if (result.success) {
+            console.log('✅ Debug: User exists and password is correct');
+            // Logout immediately after test
+            await logoutUser();
+            console.log('🔄 Debug: Logged out after test');
+        } else {
+            console.log('❌ Debug: Login failed -', result.error);
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('❌ Debug: Login test failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // Debug function to list all users (development only)
 async function debugListUsers() {
     console.log('🔍 Debug: Attempting to list users...');
@@ -362,7 +388,9 @@ async function debugListUsers() {
 // Make debug function available in development
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     window.debugListUsers = debugListUsers;
+    window.debugTestLogin = debugTestLogin;
     console.log('🛠️ Debug mode: Use debugListUsers() to see registered users');
+    console.log('🛠️ Debug mode: Use debugTestLogin(email, password) to test login');
 }
 
 // Global verfügbar machen
@@ -379,5 +407,6 @@ window.firebaseAuth = {
     getLocalBalance,
     setLocalBalance,
     migrateLocalToFirebase,
-    checkUserExists
+    checkUserExists,
+    debugTestLogin // Make debug function globally available
 };

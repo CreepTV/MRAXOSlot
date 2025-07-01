@@ -526,7 +526,7 @@ main {
   transform: translateY(-1px);
   box-shadow: 
     0 4px 12px rgba(247, 210, 3, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    inset 0 1px 0 rgba(255,255,255,0.4);
   background: linear-gradient(135deg, #ffed4e, #fff3a0);
 }
 
@@ -728,4 +728,472 @@ main {
   .warning-content {
     min-width: 240px;
   }
+}
+
+/* Profil-Popup Styles */
+.modal {
+    position: fixed;
+    z-index: 99999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+/* --- Profile Modal Large & Pretty --- */
+.profile-modal-large {
+    min-width: 480px;
+    max-width: 600px;
+    padding: 0;
+    border-radius: 20px;
+    box-shadow: 
+        0 20px 60px rgba(0,0,0,0.4),
+        0 0 0 1px rgba(218,165,32,0.3);
+    background: linear-gradient(145deg, #1a0f2e 0%, #2d1b4e 50%, #4a2d7c 100%);
+    border: 2px solid #d4af37;
+    z-index: 100000;
+    position: relative;
+    overflow: hidden;
+}
+.profile-modal-header {
+    background: linear-gradient(135deg, #bfa12c 0%, #e1c13a 50%, #c2a800 100%);
+    padding: 32px 40px 24px 40px;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: 300;
+    cursor: pointer;
+    color: rgba(0,0,0,0.6);
+    transition: all 0.2s ease;
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.1);
+}
+
+.close:hover {
+    color: black;
+    background: rgba(0,0,0,0.2);
+    transform: scale(1.1);
+}
+
+.profile-modal-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid rgba(0,0,0,0.2);
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.4),
+        0 0 0 2px rgba(255,255,255,0.3);
+    object-fit: cover;
+}
+.profile-modal-info {
+    flex: 1;
+    color: #1a1a1a;
+}
+
+.profile-modal-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.profile-modal-username {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.3);
+    margin: 0;
+}
+
+.edit-btn {
+    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.2);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    border-radius: 50%;
+    color: #1a1a1a;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-btn:hover {
+    background: rgba(0,0,0,0.25);
+    transform: scale(1.1);
+}
+
+.profile-modal-country {
+    font-size: 1.4rem;
+    color: rgba(0,0,0,0.8);
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.country-flag {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 8px;
+    object-fit: cover;
+    border: 2px solid rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.profile-modal-level {
+    font-size: 1.2rem;
+    color: rgba(0,0,0,0.7);
+    font-weight: 600;
+    background: rgba(0,0,0,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+.profile-modal-body {
+    padding: 32px 40px;
+    background: linear-gradient(135deg, #1a0f2e 0%, #2d1b4e 100%);
+    color: #f0f0f0;
+}
+
+.profile-modal-body label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #d4af37;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.profile-modal-comment {
+    background: rgba(212,175,55,0.1);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    min-height: 60px;
+    font-size: 1.1rem;
+    color: #f0f0f0;
+    line-height: 1.6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.profile-modal-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+.profile-stat {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    color: #1a1a1a;
+    padding: 20px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 
+        0 4px 16px rgba(212,175,55,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.profile-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.profile-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.profile-stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 600;
+}
+.profile-modal-edit {
+    padding: 32px 40px 40px 40px;
+    background: linear-gradient(135deg, #1a0f2e 0%, #2d1b4e 100%);
+    border-top: 1px solid rgba(212,175,55,0.3);
+}
+
+.profile-modal-edit label {
+    color: #d4af37;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.profile-modal-edit input, 
+.profile-modal-edit textarea, 
+.profile-modal-edit select {
+    width: 100%;
+    border-radius: 12px;
+    border: 2px solid rgba(212,175,55,0.3);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    background: rgba(0,0,0,0.3);
+    color: #f0f0f0;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.profile-modal-edit input:focus,
+.profile-modal-edit textarea:focus,
+.profile-modal-edit select:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.2), inset 0 2px 4px rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.4);
+}
+
+.profile-modal-edit select {
+    cursor: pointer;
+    padding-left: 50px; /* Platz für die Flagge */
+    position: relative;
+}
+
+.profile-modal-edit .country-select-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.profile-modal-edit select option {
+    background: #2d1b4e;
+    color: #f0f0f0;
+    padding: 8px;
+}
+
+.profile-modal-edit textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+#save-profile-btn {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 
+        0 4px 16px rgba(212,175,55,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    width: 100%;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+#save-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 20px rgba(212,175,55,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    background: linear-gradient(135deg, #f4d03f 0%, #ffd700 100%);
+}
+
+/* Custom Select Dropdown with Flags */
+.custom-select-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.custom-select {
+    position: relative;
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.custom-select:hover,
+.custom-select.active {
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.2), inset 0 2px 4px rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.4);
+}
+
+.select-selected {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f0f0f0;
+    font-size: 1rem;
+}
+
+.select-selected .flag-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(212,175,55,0.5);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+}
+
+.select-selected .country-name {
+    flex: 1;
+    color: #f0f0f0;
+}
+
+.select-selected .select-arrow {
+    color: rgba(212,175,55,0.8);
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+    margin-left: auto;
+}
+
+.custom-select.active .select-arrow {
+    transform: rotate(180deg);
+}
+
+.select-items {
+    position: absolute;
+    background: rgba(15,15,25,0.98);
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 2px solid rgba(212,175,55,0.4);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 1001;
+    backdrop-filter: blur(15px);
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(212,175,55,0.2);
+    display: none;
+}
+
+.custom-select.active .select-items {
+    display: block;
+}
+
+.select-item {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid rgba(212,175,55,0.1);
+}
+
+.select-item:last-child {
+    border-bottom: none;
+}
+
+.select-item:hover {
+    background: linear-gradient(135deg, rgba(212,175,55,0.3), rgba(255,215,0,0.2));
+    color: #fff;
+    transform: translateX(2px);
+}
+
+.select-item .flag-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(212,175,55,0.5);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+}
+
+.select-item span {
+    color: #f0f0f0;
+    font-size: 0.95rem;
+}
+
+/* Scrollbar styling for select items */
+.select-items::-webkit-scrollbar {
+    width: 6px;
+}
+
+.select-items::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+.select-items::-webkit-scrollbar-thumb {
+    background: rgba(212,175,55,0.6);
+    border-radius: 3px;
+}
+
+.select-items::-webkit-scrollbar-thumb:hover {
+    background: rgba(212,175,55,0.8);
+}
+
+#save-profile-btn {
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 
+        0 4px 16px rgba(212,175,55,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    width: 100%;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+#save-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 20px rgba(212,175,55,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    background: linear-gradient(135deg, #f4d03f 0%, #ffd700 100%);
 }

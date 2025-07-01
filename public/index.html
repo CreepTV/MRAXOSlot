@@ -150,5 +150,132 @@
         <button>Shop</button>
         <button>Profil</button>
     </nav>
+    <!-- Profil-Popup -->
+    <div id="profile-modal" class="modal" style="display:none;">
+        <div class="modal-content profile-modal-large">
+            <span class="close" id="close-profile-modal">&times;</span>
+            <div class="profile-modal-header">
+                <img id="profile-modal-img" class="profile-modal-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profilbild">
+                <div class="profile-modal-info">
+                    <div class="profile-modal-row">
+                        <span id="profile-modal-username" class="profile-modal-username"></span>
+                        <button id="edit-profile-btn" class="edit-btn" title="Bearbeiten"><span>✏️</span></button>
+                    </div>
+                    <div class="profile-modal-row">
+                        <span id="profile-modal-country" class="profile-modal-country"></span>
+                        <span id="profile-modal-level" class="profile-modal-level"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-modal-body">
+                <label>Kommentar:</label>
+                <div id="profile-modal-comment" class="profile-modal-comment"></div>
+                <div class="profile-modal-row">
+                    <div class="profile-stat">
+                        <span class="profile-icon">💰</span>
+                        <div class="profile-stat-value" id="profile-modal-balance">0</div>
+                        <div class="profile-stat-label">Guthaben</div>
+                    </div>
+                    <div class="profile-stat">
+                        <span class="profile-icon">👥</span>
+                        <div class="profile-stat-value" id="profile-modal-friends">0</div>
+                        <div class="profile-stat-label">Freunde</div>
+                    </div>
+                </div>
+            </div>
+            <div id="profile-modal-edit" class="profile-modal-edit" style="display:none;">
+                <label>Username:</label>
+                <input type="text" id="edit-username" maxlength="20">
+                <label>Kommentar:</label>
+                <textarea id="edit-comment" maxlength="100"></textarea>
+                <label>Profilbild-Link:</label>
+                <input type="text" id="edit-imglink">
+                <label>Land:</label>
+                <div class="custom-select-container">
+                    <div id="custom-country-select" class="custom-select">
+                        <div class="select-selected">
+                            <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                            <span class="country-name">Deutschland</span>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                        <div class="select-items">
+                            <div class="select-item" data-value="Germany">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                                <span>Deutschland</span>
+                            </div>
+                            <div class="select-item" data-value="Austria">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/at.png" alt="Austria">
+                                <span>Österreich</span>
+                            </div>
+                            <div class="select-item" data-value="Switzerland">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Switzerland">
+                                <span>Schweiz</span>
+                            </div>
+                            <div class="select-item" data-value="France">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="France">
+                                <span>Frankreich</span>
+                            </div>
+                            <div class="select-item" data-value="Italy">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Italy">
+                                <span>Italien</span>
+                            </div>
+                            <div class="select-item" data-value="Spain">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/es.png" alt="Spain">
+                                <span>Spanien</span>
+                            </div>
+                            <div class="select-item" data-value="Poland">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/pl.png" alt="Poland">
+                                <span>Polen</span>
+                            </div>
+                            <div class="select-item" data-value="Netherlands">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/nl.png" alt="Netherlands">
+                                <span>Niederlande</span>
+                            </div>
+                            <div class="select-item" data-value="Turkey">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/tr.png" alt="Turkey">
+                                <span>Türkei</span>
+                            </div>
+                            <div class="select-item" data-value="UK">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="UK">
+                                <span>Vereinigtes Königreich</span>
+                            </div>
+                            <div class="select-item" data-value="USA">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="USA">
+                                <span>USA</span>
+                            </div>
+                            <div class="select-item" data-value="Canada">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/ca.png" alt="Canada">
+                                <span>Kanada</span>
+                            </div>
+                            <div class="select-item" data-value="Russia">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/ru.png" alt="Russia">
+                                <span>Russland</span>
+                            </div>
+                            <div class="select-item" data-value="Japan">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/jp.png" alt="Japan">
+                                <span>Japan</span>
+                            </div>
+                            <div class="select-item" data-value="China">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/cn.png" alt="China">
+                                <span>China</span>
+                            </div>
+                            <div class="select-item" data-value="Brazil">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/br.png" alt="Brazil">
+                                <span>Brasilien</span>
+                            </div>
+                            <div class="select-item" data-value="Australia">
+                                <img class="flag-icon" src="https://flagcdn.com/w40/au.png" alt="Australia">
+                                <span>Australien</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Hidden input for form compatibility -->
+                <input type="hidden" id="edit-country" value="Germany">
+                <button id="save-profile-btn">Speichern</button>
+            </div>
+        </div>
+    </div>
+    <!-- Ende Profil-Popup -->
 </body>
 </html>

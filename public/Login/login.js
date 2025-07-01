@@ -116,19 +116,8 @@ loginForm.addEventListener('submit', async (e) => {
         const firebaseAuth = await waitForFirebase();
         console.log('🔥 Firebase auth ready, calling loginUser...');
         
-        // Prüfe zuerst, ob der Benutzer existiert
-        if (firebaseAuth.checkUserExists) {
-            console.log('🔍 Checking if user exists before login attempt...');
-            const userCheck = await firebaseAuth.checkUserExists(email);
-            console.log('👤 User existence check result:', userCheck);
-            
-            if (userCheck.exists === false) {
-                hideLoading();
-                showError('login', 'Kein Benutzer mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst.');
-                return;
-            }
-        }
-        
+        // Direkter Login-Versuch ohne Benutzer-Existenz-Prüfung
+        // Die Firebase Auth wird uns sagen, ob der Benutzer existiert oder nicht
         const result = await firebaseAuth.loginUser(email, password);
         console.log('📋 Login result:', result);
         
@@ -309,11 +298,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         document.getElementById('debug-section').style.display = 'block';
         
-        // Debug button handler
+        // Debug button handlers
         document.getElementById('debug-list-users').addEventListener('click', async () => {
             console.log('🔍 Debug: Listing users...');
             if (window.debugListUsers) {
                 await window.debugListUsers();
+            } else {
+                console.log('❌ Debug function not available');
+            }
+        });
+        
+        document.getElementById('debug-test-login').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                console.log('❌ Please enter email and password first');
+                alert('Bitte geben Sie zuerst E-Mail und Passwort ein!');
+                return;
+            }
+            
+            console.log('🧪 Debug: Testing login with form data...');
+            if (window.debugTestLogin) {
+                await window.debugTestLogin(email, password);
             } else {
                 console.log('❌ Debug function not available');
             }

@@ -68,6 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // GUEST WARNING
     setupGuestWarning();
     
+    // TEST: Profil-Popup für Gäste verfügbar machen
+    setupGuestProfileButton();
+    
     // BALANCE
     updateBalance();
     
@@ -104,14 +107,15 @@ function setupDropdownButtons() {
 function setupGuestWarning() {
     console.log('⚠️ Setup Guest Warning');
     
+    const warningElement = document.getElementById('guest-warning');
     const warningLoginBtn = document.getElementById('warning-login-btn');
     
-    if (warningLoginBtn) {
+    if (warningElement && warningLoginBtn) {
         warningLoginBtn.addEventListener('click', function() {
-            console.log('🔑 Warning Login geklickt');
+            console.log('🔑 Warning login clicked');
             window.location.href = 'Login/login.html';
         });
-        console.log('✅ Warning Login Button aktiv');
+        console.log('✅ Guest warning setup complete');
     }
 }
 
@@ -386,6 +390,7 @@ function updateUIForLoggedInUser() {
     const userMenu = document.querySelector('.user-menu');
     const usernameDisplay = document.getElementById('username-display');
     const emailDisplay = document.getElementById('email-display');
+    const profileImg = document.getElementById('profile-img');
     
     if (guestMenu && userMenu) {
         guestMenu.style.display = 'none';
@@ -417,6 +422,26 @@ function updateUIForLoggedInUser() {
             console.log('📧 Email display set to:', currentUserState.user.email);
         }
         
+        // Update profile image
+        if (profileImg && currentUserState.userData) {
+            const userImageUrl = currentUserState.userData.imglink;
+            if (userImageUrl && userImageUrl.trim() !== '') {
+                profileImg.src = userImageUrl;
+                console.log('🖼️ Profile image updated to user image:', userImageUrl);
+                
+                // Add error handling for broken images
+                profileImg.onerror = function() {
+                    console.warn('⚠️ User profile image failed to load, using default');
+                    this.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    this.onerror = null; // Prevent infinite loop
+                };
+            } else {
+                // Use default image if no custom image is set
+                profileImg.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                console.log('🖼️ Using default profile image');
+            }
+        }
+        
         // Setup logged in user event listeners
         setupLoggedInUserButtons();
         
@@ -436,6 +461,7 @@ function updateUIForGuestMode() {
     
     const guestMenu = document.querySelector('.guest-menu');
     const userMenu = document.querySelector('.user-menu');
+    const profileImg = document.getElementById('profile-img');
     
     if (guestMenu && userMenu) {
         guestMenu.style.display = 'block';
@@ -443,6 +469,13 @@ function updateUIForGuestMode() {
         
         // Show guest warning for non-logged in users
         toggleGuestWarning(true);
+    }
+    
+    // Reset profile image to default for guest mode
+    if (profileImg) {
+        profileImg.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        profileImg.onerror = null; // Remove any error handlers
+        console.log('🖼️ Profile image reset to default for guest mode');
     }
     
     currentUserState = {
@@ -535,35 +568,258 @@ async function handleLogout() {
     }
 }
 
+// === Öffentliches Profil Popup ===
+
+function openProfileModal(userData, isOwnProfile = true) {
+    const modal = document.getElementById('profile-modal');
+    if (!modal) {
+        console.error('❌ Profile modal not found!');
+        return;
+    }
+
+    console.log('🎭 Opening profile modal for:', userData);
+
+    // Profilbild
+    const profileImg = document.getElementById('profile-modal-img');
+    if (profileImg) {
+        profileImg.src = userData.imglink || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    }
+    
+    // Username prominent
+    const usernameEl = document.getElementById('profile-modal-username');
+    if (usernameEl) {
+        usernameEl.textContent = userData.username || 'Benutzer';
+    }
+    
+    // Land als Flagge + Text
+    const countrySpan = document.getElementById('profile-modal-country');
+    if (countrySpan) {
+        if (userData.country) {
+            const flagUrl = getCountryFlag(userData.country);
+            countrySpan.innerHTML = `<img class="country-flag" src="${flagUrl}" alt="${userData.country}" onerror="this.src='https://flagcdn.com/w40/xx.png'" />${userData.country}`;
+        } else {
+            countrySpan.innerHTML = `<img class="country-flag" src="https://flagcdn.com/w40/xx.png" alt="Unknown" />Land unbekannt`;
+        }
+    }
+    
+    const levelEl = document.getElementById('profile-modal-level');
+    if (levelEl) {
+        levelEl.textContent = 'Level ' + (userData.level || 1);
+    }
+    
+    const commentEl = document.getElementById('profile-modal-comment');
+    if (commentEl) {
+        commentEl.textContent = userData.comment || 'Kein Kommentar verfügbar.';
+    }
+    
+    const balanceEl = document.getElementById('profile-modal-balance');
+    if (balanceEl) {
+        balanceEl.textContent = userData.balance || 0;
+    }
+    
+    const friendsEl = document.getElementById('profile-modal-friends');
+    if (friendsEl) {
+        friendsEl.textContent = userData.friends ? userData.friends.length : 0;
+    }
+
+    // Editierbare Felder vorbereiten
+    const editUsername = document.getElementById('edit-username');
+    if (editUsername) {
+        editUsername.value = userData.username || '';
+    }
+    
+    const editComment = document.getElementById('edit-comment');
+    if (editComment) {
+        editComment.value = userData.comment || '';
+    }
+    
+    const editImglink = document.getElementById('edit-imglink');
+    if (editImglink) {
+        editImglink.value = userData.imglink || '';
+    }
+    
+    // Set country select (update both hidden input and custom select display)
+    const countrySelect = document.getElementById('edit-country');
+    const customSelect = document.getElementById('custom-country-select');
+    
+    if (countrySelect && customSelect) {
+        const selectedCountry = userData.country || 'Germany';
+        countrySelect.value = selectedCountry;
+        
+        // Update custom select display
+        const flagUrl = getCountryFlag(selectedCountry);
+        const selectedDiv = customSelect.querySelector('.select-selected');
+        if (selectedDiv) {
+            selectedDiv.querySelector('.flag-icon').src = flagUrl;
+            selectedDiv.querySelector('.country-name').textContent = getCountryDisplayName(selectedCountry);
+        }
+    }
+
+    // Editier-Button nur für eigenes Profil
+    const editBtn = document.getElementById('edit-profile-btn');
+    if (editBtn) {
+        editBtn.style.display = isOwnProfile ? 'inline-block' : 'none';
+    }
+    
+    const editSection = document.getElementById('profile-modal-edit');
+    if (editSection) {
+        editSection.style.display = 'none';
+    }
+
+    // Modal anzeigen
+    modal.style.display = 'flex';
+    
+    // Custom country select nach dem Anzeigen des Modals initialisieren
+    setTimeout(() => {
+        setupCustomCountrySelect();
+    }, 50);
+    
+    console.log('✅ Profile modal shown');
+}
+
+// Hilfsfunktion: Flaggen-URL aus Land
+function getCountryFlag(country) {
+    const flagCodes = {
+        'Germany': 'de',
+        'Austria': 'at',
+        'Switzerland': 'ch',
+        'France': 'fr',
+        'Italy': 'it',
+        'Spain': 'es',
+        'Poland': 'pl',
+        'Netherlands': 'nl',
+        'Turkey': 'tr',
+        'UK': 'gb',
+        'United Kingdom': 'gb',
+        'USA': 'us',
+        'Canada': 'ca',
+        'Russia': 'ru',
+        'Japan': 'jp',
+        'China': 'cn',
+        'Brazil': 'br',
+        'Australia': 'au'
+    };
+    const countryCode = flagCodes[country];
+    return countryCode ? `https://flagcdn.com/w40/${countryCode}.png` : 'https://flagcdn.com/w40/xx.png';
+}
+
+// Hilfsfunktion: Deutsche Ländernamen
+function getCountryDisplayName(country) {
+    const displayNames = {
+        'Germany': 'Deutschland',
+        'Austria': 'Österreich',
+        'Switzerland': 'Schweiz',
+        'France': 'Frankreich',
+        'Italy': 'Italien',
+        'Spain': 'Spanien',
+        'Poland': 'Polen',
+        'Netherlands': 'Niederlande',
+        'Turkey': 'Türkei',
+        'UK': 'Vereinigtes Königreich',
+        'United Kingdom': 'Vereinigtes Königreich',
+        'USA': 'USA',
+        'Canada': 'Kanada',
+        'Russia': 'Russland',
+        'Japan': 'Japan',
+        'China': 'China',
+        'Brazil': 'Brasilien',
+        'Australia': 'Australien'
+    };
+    return displayNames[country] || country;
+}
+
+// Update flag in select visually (for Chrome/Edge)
+function updateCountryFlagInSelect() {
+    const select = document.getElementById('edit-country');
+    if (!select) return;
+    
+    // Entferne alte Flaggen-Anzeige wenn vorhanden
+    const existingFlag = select.parentNode.querySelector('.select-flag-preview');
+    if (existingFlag) {
+        existingFlag.remove();
+    }
+    
+    if (select.value) {
+        const flagUrl = getCountryFlag(select.value);
+        const flagImg = document.createElement('img');
+        flagImg.src = flagUrl;
+        flagImg.className = 'select-flag-preview';
+        flagImg.alt = select.value;
+        flagImg.onerror = function() { this.src = 'https://flagcdn.com/w40/xx.png'; };
+        
+        // Füge die Flagge vor dem Select ein
+        select.parentNode.insertBefore(flagImg, select);
+    }
+}
+
+// Modal schließen
+function closeProfileModal() {
+    const modal = document.getElementById('profile-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Event-Listener für Modal
+if (document.getElementById('close-profile-modal')) {
+    document.getElementById('close-profile-modal').onclick = closeProfileModal;
+}
+window.onclick = function(event) {
+    const modal = document.getElementById('profile-modal');
+    if (event.target === modal) closeProfileModal();
+};
+
+// Bearbeiten-Button
+if (document.getElementById('edit-profile-btn')) {
+    document.getElementById('edit-profile-btn').onclick = function() {
+        document.getElementById('profile-modal-edit').style.display = 'block';
+        updateCountryFlagInSelect();
+    };
+}
+
+// Live-Flagge beim Wechseln des Landes
+if (document.getElementById('edit-country')) {
+    document.getElementById('edit-country').addEventListener('change', updateCountryFlagInSelect);
+}
+
+// Speichern-Button
+if (document.getElementById('save-profile-btn')) {
+    document.getElementById('save-profile-btn').onclick = async function() {
+        const username = document.getElementById('edit-username').value.trim();
+        const comment = document.getElementById('edit-comment').value.trim();
+        const imglink = document.getElementById('edit-imglink').value.trim();
+        const country = document.getElementById('edit-country').value;
+        if (!currentUserState.user) return;
+        
+        // Update in Firestore
+        await window.firebaseAuth.updateUserStats(currentUserState.user.uid, {
+            username, comment, imglink, country
+        });
+        
+        // Update local state
+        if (currentUserState.userData) {
+            currentUserState.userData.username = username;
+            currentUserState.userData.comment = comment;
+            currentUserState.userData.imglink = imglink;
+            currentUserState.userData.country = country;
+        }
+        
+        // Update profile image on main page immediately
+        updateProfileImage(imglink);
+        
+        // Update UI with new data
+        updateUIForLoggedInUser();
+        
+        openProfileModal(currentUserState.userData, true);
+        document.getElementById('profile-modal-edit').style.display = 'none';
+    };
+}
+
+// Öffne eigenes Profil aus Dropdown
 function showPublicProfile() {
     if (!currentUserState.userData || !currentUserState.user) {
         alert('Profildaten nicht verfügbar');
         return;
     }
-    
-    const userData = currentUserState.userData;
-    const user = currentUserState.user;
-    
-    // Calculate some basic stats
-    const winRate = userData.gamesPlayed > 0 ? 
-        ((userData.totalWinnings / (userData.gamesPlayed * 10)) * 100).toFixed(1) : 0; // Assuming 10 average bet
-    
-    const profileMessage = `🌟 Öffentliches Profil
-    
-👤 ${userData.username || 'Spieler'}
-📧 ${user.email}
-    
-🎮 Spielstatistiken:
-🎯 Spiele gespielt: ${userData.gamesPlayed || 0}
-🏆 Gesamtgewinne: €${userData.totalWinnings || 0}
-📈 Erfolgshäufigkeit: ${winRate}%
-💰 Aktuelles Guthaben: €${userData.balance || 0}
-
-📅 Mitglied seit: ${userData.createdAt ? new Date(userData.createdAt.toDate()).toLocaleDateString('de-DE') : 'Unbekannt'}
-
-🏅 Erfolge: ${userData.achievements && userData.achievements.length > 0 ? userData.achievements.join(', ') : 'Noch keine Erfolge'}`;
-    
-    alert(profileMessage);
+    openProfileModal(currentUserState.userData, true);
 }
 
 // EXPORT FUNCTIONS for slot games - Vereinfacht
@@ -620,3 +876,163 @@ window.debugUserState = function() {
 };
 
 console.log('🎯 Script geladen - Dropdown sollte funktionieren!');
+
+function setupGuestProfileButton() {
+    console.log('👤 Setup Guest Profile Button');
+    
+    // Füge einen Test-Button für das Profil-Popup hinzu (nur für Tests)
+    const publicProfileBtn = document.getElementById('public-profile-btn');
+    if (publicProfileBtn) {
+        publicProfileBtn.addEventListener('click', function() {
+            console.log('👁️ Guest profile clicked');
+            showGuestProfile();
+        });
+        console.log('✅ Guest profile button setup');
+    }
+    
+    // TEST: Füge temporären Test-Button hinzu
+    const testBtn = document.createElement('button');
+    testBtn.textContent = 'Test Profil-Popup';
+    testBtn.style.position = 'fixed';
+    testBtn.style.top = '100px';
+    testBtn.style.left = '10px';
+    testBtn.style.zIndex = '1000';
+    testBtn.style.background = '#d4af37';
+    testBtn.style.color = '#1a1a1a';
+    testBtn.style.border = 'none';
+    testBtn.style.padding = '10px 15px';
+    testBtn.style.borderRadius = '8px';
+    testBtn.style.cursor = 'pointer';
+    testBtn.style.fontWeight = 'bold';
+    
+    testBtn.addEventListener('click', function() {
+        console.log('🧪 Test profile button clicked');
+        showGuestProfile();
+    });
+    
+    document.body.appendChild(testBtn);
+    console.log('✅ Test profile button added');
+}
+
+function showGuestProfile() {
+    console.log('👤 Showing guest profile');
+    
+    // Test-Daten für Gast mit verschiedenen Ländern zum Testen
+    const countries = ['Germany', 'Austria', 'USA', 'Japan', 'Brazil', 'Australia'];
+    const randomCountry = countries[Math.floor(Math.random() * countries.length)];
+    
+    const guestData = {
+        username: 'Gast-Spieler',
+        comment: 'Das ist ein Test-Kommentar für das Profil-Popup! Die Flaggen sollten jetzt schön angezeigt werden.',
+        imglink: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+        country: randomCountry,
+        level: 1,
+        balance: 1000,
+        friends: []
+    };
+    
+    openProfileModal(guestData, false);
+}
+
+// Setup custom country select dropdown
+function setupCustomCountrySelect() {
+    const customSelect = document.getElementById('custom-country-select');
+    if (!customSelect) {
+        console.log('❌ Custom select not found');
+        return;
+    }
+    
+    const selectedDiv = customSelect.querySelector('.select-selected');
+    const itemsDiv = customSelect.querySelector('.select-items');
+    const hiddenInput = document.getElementById('edit-country');
+    
+    if (!selectedDiv || !itemsDiv || !hiddenInput) {
+        console.log('❌ Custom select elements not found');
+        return;
+    }
+    
+    // Remove existing event listeners to prevent conflicts
+    const newSelectedDiv = selectedDiv.cloneNode(true);
+    selectedDiv.parentNode.replaceChild(newSelectedDiv, selectedDiv);
+    
+    const newItemsDiv = itemsDiv.cloneNode(true);
+    itemsDiv.parentNode.replaceChild(newItemsDiv, itemsDiv);
+    
+    // Get updated references
+    const updatedSelectedDiv = customSelect.querySelector('.select-selected');
+    const updatedItemsDiv = customSelect.querySelector('.select-items');
+    
+    // Toggle dropdown
+    updatedSelectedDiv.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        customSelect.classList.toggle('active');
+        
+        // Close other dropdowns if any
+        document.querySelectorAll('.custom-select').forEach(select => {
+            if (select !== customSelect) {
+                select.classList.remove('active');
+            }
+        });
+    });
+    
+    // Handle item selection
+    updatedItemsDiv.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const item = e.target.closest('.select-item');
+        if (item) {
+            const value = item.getAttribute('data-value');
+            const flagImg = item.querySelector('.flag-icon').src;
+            const countryName = item.querySelector('span').textContent;
+            
+            // Update selected display
+            updatedSelectedDiv.querySelector('.flag-icon').src = flagImg;
+            updatedSelectedDiv.querySelector('.country-name').textContent = countryName;
+            
+            // Update hidden input
+            hiddenInput.value = value;
+            
+            // Close dropdown
+            customSelect.classList.remove('active');
+            
+            console.log('✅ Country selected:', value, countryName);
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!customSelect.contains(e.target)) {
+            customSelect.classList.remove('active');
+        }
+    });
+    
+    console.log('✅ Custom country select setup complete');
+}
+
+// Hilfsfunktion: Profilbild auf der Startseite aktualisieren
+function updateProfileImage(imageUrl) {
+    const profileImg = document.getElementById('profile-img');
+    if (!profileImg) {
+        console.warn('⚠️ Profile image element not found');
+        return;
+    }
+    
+    if (imageUrl && imageUrl.trim() !== '') {
+        profileImg.src = imageUrl;
+        console.log('🖼️ Profile image updated to:', imageUrl);
+        
+        // Add error handling for broken images
+        profileImg.onerror = function() {
+            console.warn('⚠️ Profile image failed to load, using default');
+            this.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            this.onerror = null; // Prevent infinite loop
+        };
+    } else {
+        // Use default image if no custom image is provided
+        profileImg.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        profileImg.onerror = null; // Remove any error handlers
+        console.log('🖼️ Profile image reset to default');
+    }
+}
