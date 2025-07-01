@@ -12,11 +12,29 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase.js"></script>
     
+    <!-- Global Balance Manager -->
+    <script src="balanceManager.js"></script>
+    
     <!-- Einfache Version ohne Firebase für Test -->
     <script defer src="main.js"></script>
 </head>
 <body>
     <header>
+        <!-- Guest Warning Notice -->
+        <div class="guest-warning" id="guest-warning" style="display: none;">
+            <div class="warning-content">
+                <span class="warning-icon">⚠️</span>
+                <div class="warning-text">
+                    <strong>Gastmodus</strong>
+                    <span class="warning-subtext">Melde dich an für echten Fortschritt!</span>
+                </div>
+                <button class="warning-login-btn" id="warning-login-btn">
+                    <span>🔑</span>
+                    Anmelden
+                </button>
+            </div>
+        </div>
+        
         <div class="profile">
             <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" id="profile-img" />
             <div class="profile-dropdown" id="profile-dropdown">

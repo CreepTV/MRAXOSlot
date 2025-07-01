@@ -554,44 +554,178 @@ main {
   100% { background-position: 0% 50%; }
 }
 
-@media (max-width: 600px) {
-  .slot-cards {
-    gap: 1rem;
-    justify-content: flex-start;
+/* Guest Warning Notice */
+.guest-warning {
+  position: absolute;
+  top: 14px;
+  left: 2rem;
+  z-index: 100;
+  border-radius: 12px;
+  animation: slideInLeft 0.5s ease-out, pulseWarning 3s infinite ease-in-out;
+}
+
+.warning-content {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 16px rgba(255, 107, 107, 0.4),
+    0 0 20px rgba(255, 107, 107, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 280px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.warning-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.warning-icon {
+  font-size: 1.6rem;
+  animation: bounce 2s infinite;
+}
+
+.warning-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.warning-text strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.warning-subtext {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.warning-login-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.warning-login-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.warning-login-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100px);
   }
-  .slot-card {
-    width: 110px;
-    height: 196px; /* 9:16 aspect ratio for mobile */
-    font-size: 1.15rem;
-  }
-  .emoji-bonanza {
-    width: 110px;
-    height: 196px; /* 9:16 aspect ratio for mobile */
-  }
-  .profile {
-    top: 1rem;
-    right: 1rem;
-  }
-  .bottom-nav button {
-    font-size: 1rem;
-    padding: 0.4rem 0.7rem;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
+
+@keyframes pulseWarning {
+  0%, 100% {
+    box-shadow: 
+      0 4px 16px rgba(255, 107, 107, 0.4),
+      0 0 20px rgba(255, 107, 107, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 6px 20px rgba(255, 107, 107, 0.6),
+      0 0 30px rgba(255, 107, 107, 0.4);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Mobile responsiveness for guest warning */
+@media (max-width: 600px) {
+  .guest-warning {
+    left: 1rem;
+    right: 1rem;
+    top: 10px;
+  }
+  
+  .warning-content {
+    min-width: auto;
+    width: 100%;
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  
+  .warning-text strong {
+    font-size: 0.8rem;
+  }
+  
+  .warning-subtext {
+    font-size: 0.7rem;
+  }
+  
+  .warning-login-btn {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+}
+
 @media (max-width: 900px) {
-  .ad-card {
-    width: 150px;
-    height: 180px;
-    margin-right: 1rem;
+  .guest-warning {
+    left: 1.5rem;
   }
-  .slide {
-    font-size: 1.1rem;
-  }
-  .slideshow-dots {
-    bottom: 8px;
-  }
-  .dot {
-    width: 8px;
-    height: 8px;
-    margin: 0 3px;
+  
+  .warning-content {
+    min-width: 240px;
   }
 }

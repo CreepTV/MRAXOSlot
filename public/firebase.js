@@ -64,11 +64,14 @@ async function createUserProfile(user, additionalData = {}) {
             const { email, uid } = user;
             const createdAt = new Date();
             
+            // Check for existing guest balance
+            const existingGuestBalance = parseInt(localStorage.getItem('slot_player_balance')) || 1000;
+            
             const profileData = {
                 uid,
                 email,
                 username: additionalData.username || email.split('@')[0],
-                balance: 1000, // Startguthaben
+                balance: existingGuestBalance, // Verwende Guest-Balance als Startwert
                 createdAt,
                 gamesPlayed: 0,
                 totalWinnings: 0,
@@ -81,7 +84,7 @@ async function createUserProfile(user, additionalData = {}) {
             };
             
             await userRef.set(profileData);
-            console.log('✅ User profile created successfully for:', email);
+            console.log('✅ User profile created successfully for:', email, 'with balance:', existingGuestBalance);
         } else {
             console.log('ℹ️ User profile already exists for:', user.email);
         }
@@ -108,6 +111,30 @@ async function getUserData(userId) {
     }
     
     return null;
+}
+
+async function checkUserExists(email) {
+    console.log('🔍 Checking if user exists:', email);
+    
+    try {
+        // Firebase doesn't provide a direct way to check if email exists
+        // We'll use fetchSignInMethodsForEmail which is deprecated but still works
+        const methods = await auth.fetchSignInMethodsForEmail(email);
+        console.log('🔍 Sign-in methods for', email, ':', methods);
+        
+        return {
+            exists: methods.length > 0,
+            methods: methods
+        };
+    } catch (error) {
+        console.error('❌ Error checking user existence:', error);
+        
+        // If the method is not available, return uncertain
+        return {
+            exists: null,
+            error: error.message
+        };
+    }
 }
 
 async function updateUserBalance(userId, newBalance) {
@@ -253,15 +280,27 @@ async function registerUser(email, password, username) {
 
 async function loginUser(email, password) {
     console.log('🚀 Attempting to login user:', email);
+    console.log('🔍 Password length:', password ? password.length : 'undefined');
+    console.log('🔍 Email format valid:', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
     
     try {
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         console.log('✅ User logged in successfully:', userCredential.user.email);
+        console.log('🆔 User UID:', userCredential.user.uid);
         return { success: true, user: userCredential.user };
     } catch (error) {
         console.error('❌ Login error:', error);
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
+        
+        // Zusätzliche Debug-Informationen
+        if (error.code === 'auth/invalid-credential') {
+            console.log('🔍 Invalid credential details:');
+            console.log('- Email:', email);
+            console.log('- Password provided:', !!password);
+            console.log('- Error suggests either email not found or wrong password');
+        }
+        
         return { success: false, error: error.code || error.message };
     }
 }
@@ -280,24 +319,50 @@ function onAuthChange(callback) {
     return auth.onAuthStateChanged(callback);
 }
 
-// Local Storage für Gastmodus
+// Legacy functions für Backward Compatibility
 function getLocalBalance() {
-    return parseInt(localStorage.getItem('slot1_balance')) || 1000;
+    return parseInt(localStorage.getItem('slot_player_balance')) || 1000;
 }
 
 function setLocalBalance(balance) {
-    localStorage.setItem('slot1_balance', balance.toString());
+    localStorage.setItem('slot_player_balance', balance.toString());
 }
 
 function migrateLocalToFirebase(user) {
-    // Migration von lokalen Daten zu Firebase wenn User sich anmeldet
-    // Diese Funktion resettet lokale Daten und nutzt Firebase
-    localStorage.removeItem('slot1_balance');
-    // Weitere lokale Daten können hier entfernt werden
+    // Diese Funktion wird jetzt vom balanceManager.js gehandhabt
+    console.log('Migration handled by BalanceManager');
 }
 
 function getCurrentUser() {
     return auth.currentUser;
+}
+
+// Debug function to list all users (development only)
+async function debugListUsers() {
+    console.log('🔍 Debug: Attempting to list users...');
+    
+    try {
+        // Note: This only works if we have users in Firestore
+        const usersSnapshot = await db.collection('users').limit(10).get();
+        console.log('👥 Users in database:');
+        
+        usersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            console.log(`- ${userData.email} (${userData.username}) - Balance: ${userData.balance}`);
+        });
+        
+        if (usersSnapshot.empty) {
+            console.log('❌ No users found in database');
+        }
+    } catch (error) {
+        console.error('❌ Error listing users:', error);
+    }
+}
+
+// Make debug function available in development
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    window.debugListUsers = debugListUsers;
+    console.log('🛠️ Debug mode: Use debugListUsers() to see registered users');
 }
 
 // Global verfügbar machen
@@ -313,5 +378,6 @@ window.firebaseAuth = {
     getCurrentUser,
     getLocalBalance,
     setLocalBalance,
-    migrateLocalToFirebase
+    migrateLocalToFirebase,
+    checkUserExists
 };

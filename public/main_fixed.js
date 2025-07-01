@@ -65,9 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // DROPDOWN BUTTONS
     setupDropdownButtons();
     
-    // GUEST WARNING
-    setupGuestWarning();
-    
     // BALANCE
     updateBalance();
     
@@ -98,34 +95,6 @@ function setupDropdownButtons() {
             window.location.href = 'Login/login.html';
         });
         console.log('✅ Register Button aktiv');
-    }
-}
-
-function setupGuestWarning() {
-    console.log('⚠️ Setup Guest Warning');
-    
-    const warningLoginBtn = document.getElementById('warning-login-btn');
-    
-    if (warningLoginBtn) {
-        warningLoginBtn.addEventListener('click', function() {
-            console.log('🔑 Warning Login geklickt');
-            window.location.href = 'Login/login.html';
-        });
-        console.log('✅ Warning Login Button aktiv');
-    }
-}
-
-// Show or hide guest warning based on login status
-function toggleGuestWarning(show) {
-    const guestWarning = document.getElementById('guest-warning');
-    if (guestWarning) {
-        if (show) {
-            guestWarning.style.display = 'block';
-            console.log('⚠️ Guest warning shown');
-        } else {
-            guestWarning.style.display = 'none';
-            console.log('✅ Guest warning hidden');
-        }
     }
 }
 
@@ -233,8 +202,6 @@ async function checkAuthState() {
                         userData: userData
                     };
                     updateUIForLoggedInUser();
-                    // Sync balance immediately for returning user
-                    await syncBalanceAfterLogin();
                 } catch (userDataError) {
                     console.error('⚠️ Error fetching user data:', userDataError);
                     // Still update UI with basic user info
@@ -244,8 +211,6 @@ async function checkAuthState() {
                         userData: null
                     };
                     updateUIForLoggedInUser();
-                    // Try to sync balance even without full userData
-                    await syncBalanceAfterLogin();
                 }
             } else {
                 console.log('ℹ️ No user logged in');
@@ -288,9 +253,6 @@ function setupFirebaseAuthListener() {
                     // Update UI with user data
                     updateUIForLoggedInUser();
                     
-                    // Immediately sync and display the correct balance after login
-                    await syncBalanceAfterLogin();
-                    
                 } catch (error) {
                     console.error('❌ Error fetching user data:', error);
                     // Still update UI even if userData fetch fails
@@ -302,8 +264,6 @@ function setupFirebaseAuthListener() {
                     
                     // Try balance sync even with error
                     updateUIForLoggedInUser();
-                    // Still try to sync balance
-                    await syncBalanceAfterLogin();
                 }
             } else {
                 console.log('ℹ️ User is signed out');
@@ -313,67 +273,6 @@ function setupFirebaseAuthListener() {
     } else {
         console.log('ℹ️ Firebase auth not available, will retry in 1 second');
         setTimeout(setupFirebaseAuthListener, 1000);
-    }
-}
-
-// Special function to sync balance immediately after login
-async function syncBalanceAfterLogin() {
-    console.log('🔄 Syncing balance after login...');
-    
-    try {
-        let balanceToUse = 1000; // Default fallback
-        
-        // Priority 1: Try to get balance from Firebase userData
-        if (currentUserState.userData && typeof currentUserState.userData.balance === 'number') {
-            balanceToUse = currentUserState.userData.balance;
-            console.log('💰 Using balance from Firebase userData:', balanceToUse);
-        }
-        // Priority 2: Try BalanceManager
-        else if (window.balanceManager) {
-            try {
-                balanceToUse = await window.balanceManager.getBalance();
-                console.log('💰 Using balance from BalanceManager:', balanceToUse);
-            } catch (error) {
-                console.warn('⚠️ BalanceManager failed, trying localStorage:', error);
-                balanceToUse = parseInt(localStorage.getItem('player_balance')) || 1000;
-            }
-        }
-        // Priority 3: Fallback to localStorage
-        else {
-            balanceToUse = parseInt(localStorage.getItem('player_balance')) || 1000;
-            console.log('💰 Using balance from localStorage fallback:', balanceToUse);
-        }
-        
-        // Update both localStorage and BalanceManager to ensure consistency
-        localStorage.setItem('player_balance', balanceToUse.toString());
-        
-        if (window.balanceManager) {
-            try {
-                await window.balanceManager.setBalance(balanceToUse);
-                console.log('✅ Balance synced to BalanceManager:', balanceToUse);
-            } catch (error) {
-                console.warn('⚠️ Could not sync to BalanceManager:', error);
-            }
-        }
-        
-        // Immediately update the UI
-        const balanceElement = document.getElementById('balance');
-        if (balanceElement) {
-            balanceElement.textContent = balanceToUse;
-            console.log('🎯 Balance UI immediately updated to:', balanceToUse);
-        }
-        
-        return balanceToUse;
-        
-    } catch (error) {
-        console.error('❌ Error syncing balance after login:', error);
-        // Emergency fallback
-        const fallbackBalance = 1000;
-        const balanceElement = document.getElementById('balance');
-        if (balanceElement) {
-            balanceElement.textContent = fallbackBalance;
-        }
-        return fallbackBalance;
     }
 }
 
@@ -390,9 +289,6 @@ function updateUIForLoggedInUser() {
     if (guestMenu && userMenu) {
         guestMenu.style.display = 'none';
         userMenu.style.display = 'block';
-        
-        // Hide guest warning for logged in users
-        toggleGuestWarning(false);
         
         // Update username display
         if (usernameDisplay) {
@@ -419,15 +315,9 @@ function updateUIForLoggedInUser() {
         
         // Setup logged in user event listeners
         setupLoggedInUserButtons();
-        
-        // Force immediate balance update for logged in user
-        console.log('🔄 Forcing immediate balance refresh for logged in user');
-        setTimeout(() => {
-            updateBalance();
-        }, 100); // Small delay to ensure DOM is ready
     }
     
-    // Always update balance, but don't wait for it to complete UI update
+    // Update balance from Firebase if available
     updateBalance();
 }
 
@@ -440,9 +330,6 @@ function updateUIForGuestMode() {
     if (guestMenu && userMenu) {
         guestMenu.style.display = 'block';
         userMenu.style.display = 'none';
-        
-        // Show guest warning for non-logged in users
-        toggleGuestWarning(true);
     }
     
     currentUserState = {

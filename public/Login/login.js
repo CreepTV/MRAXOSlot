@@ -116,6 +116,19 @@ loginForm.addEventListener('submit', async (e) => {
         const firebaseAuth = await waitForFirebase();
         console.log('🔥 Firebase auth ready, calling loginUser...');
         
+        // Prüfe zuerst, ob der Benutzer existiert
+        if (firebaseAuth.checkUserExists) {
+            console.log('🔍 Checking if user exists before login attempt...');
+            const userCheck = await firebaseAuth.checkUserExists(email);
+            console.log('👤 User existence check result:', userCheck);
+            
+            if (userCheck.exists === false) {
+                hideLoading();
+                showError('login', 'Kein Benutzer mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst.');
+                return;
+            }
+        }
+        
         const result = await firebaseAuth.loginUser(email, password);
         console.log('📋 Login result:', result);
         
@@ -127,8 +140,7 @@ loginForm.addEventListener('submit', async (e) => {
             // Zeige Erfolgsmeldung
             showSuccess('login', '✅ Anmeldung erfolgreich! Du wirst weitergeleitet...');
             
-            // Migrate local data and redirect
-            firebaseAuth.migrateLocalToFirebase(result.user);
+            // Balance wird automatisch über Firebase Auth State Listener synchronisiert
             setTimeout(() => {
                 window.location.href = '../index.html';
             }, 1500); // 1.5 Sekunden warten
@@ -138,13 +150,17 @@ loginForm.addEventListener('submit', async (e) => {
             
             if (result && result.error) {
                 if (result.error.includes('user-not-found')) {
-                    errorMessage = 'Kein Benutzer mit dieser E-Mail-Adresse gefunden.';
+                    errorMessage = 'Kein Benutzer mit dieser E-Mail-Adresse gefunden. Bitte registrieren Sie sich zuerst.';
                 } else if (result.error.includes('wrong-password')) {
-                    errorMessage = 'Falsches Passwort.';
+                    errorMessage = 'Falsches Passwort. Bitte überprüfen Sie Ihre Eingabe.';
+                } else if (result.error.includes('invalid-credential')) {
+                    errorMessage = 'Ungültige Anmeldedaten. Bitte überprüfen Sie E-Mail und Passwort.';
                 } else if (result.error.includes('invalid-email')) {
                     errorMessage = 'Ungültige E-Mail-Adresse.';
                 } else if (result.error.includes('too-many-requests')) {
                     errorMessage = 'Zu viele Anmeldeversuche. Bitte versuchen Sie es später erneut.';
+                } else if (result.error.includes('user-disabled')) {
+                    errorMessage = 'Dieses Benutzerkonto wurde deaktiviert.';
                 } else {
                     errorMessage = `Anmeldung fehlgeschlagen: ${result.error}`;
                 }
@@ -288,6 +304,21 @@ backBtn.addEventListener('click', () => {
 // Auto-focus first input
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-email').focus();
+    
+    // Show debug section in development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        document.getElementById('debug-section').style.display = 'block';
+        
+        // Debug button handler
+        document.getElementById('debug-list-users').addEventListener('click', async () => {
+            console.log('🔍 Debug: Listing users...');
+            if (window.debugListUsers) {
+                await window.debugListUsers();
+            } else {
+                console.log('❌ Debug function not available');
+            }
+        });
+    }
 });
 
 // Handle Enter key on forms

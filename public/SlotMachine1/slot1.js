@@ -1,20 +1,30 @@
 document.addEventListener('DOMContentLoaded', async function() {
-  // Firebase balance functions
+  // Vereinfachtes Balance System
   let balance = 1000;
   
-  // Initialize balance from main.js functions
-  if (window.getCurrentBalance) {
+  // Initialize balance via BalanceManager
+  if (window.balanceManager) {
+    balance = await window.balanceManager.getBalance();
+    console.log('🎰 Balance loaded from BalanceManager:', balance);
+  } else if (window.getCurrentBalance) {
     balance = await window.getCurrentBalance();
+    console.log('🎰 Balance loaded from legacy function:', balance);
   } else {
-    balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+    balance = parseInt(localStorage.getItem('player_balance')) || 1000;
+    console.log('🎰 Balance loaded from localStorage fallback:', balance);
   }
   
   async function saveBalance(newBalance) {
     balance = newBalance;
-    if (window.updateUserBalance) {
+    if (window.balanceManager) {
+      await window.balanceManager.setBalance(newBalance);
+      console.log('🎰 Balance saved via BalanceManager:', newBalance);
+    } else if (window.updateUserBalance) {
       await window.updateUserBalance(newBalance);
+      console.log('🎰 Balance saved via legacy function:', newBalance);
     } else {
-      localStorage.setItem('slot1_balance', newBalance);
+      localStorage.setItem('player_balance', newBalance.toString());
+      console.log('🎰 Balance saved to localStorage fallback:', newBalance);
     }
   }
   // Ladebildschirm-Logik
