@@ -1344,6 +1344,108 @@ document.addEventListener('DOMContentLoaded', function() {
   const winTitle = document.getElementById('win-title');
   const winAmountEl = document.getElementById('win-amount');
 
+  // Sparkle effect for Big Win popup
+  let sparkleContainer = null;
+  let sparkleInterval = null;
+  let clickToCloseEnabled = false;
+  
+  function createSparkleContainer() {
+    if (sparkleContainer) {
+      sparkleContainer.remove();
+    }
+    sparkleContainer = document.createElement('div');
+    sparkleContainer.className = 'sparkle-container';
+    document.body.appendChild(sparkleContainer);
+  }
+  
+  function createSparkle() {
+    if (!sparkleContainer) return;
+    
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    
+    // Random size variation with more variety
+    const rand = Math.random();
+    if (rand < 0.2) {
+      sparkle.classList.add('large');
+    } else if (rand < 0.5) {
+      sparkle.classList.add('small');
+    }
+    
+    // Random position across entire screen
+    sparkle.style.left = Math.random() * 100 + 'vw';
+    sparkle.style.top = Math.random() * 100 + 'vh';
+    
+    // Random animation delay for natural effect
+    sparkle.style.animationDelay = Math.random() * 2 + 's';
+    
+    // Random animation duration for variety
+    sparkle.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
+    
+    sparkleContainer.appendChild(sparkle);
+    
+    // Remove sparkle after animation with buffer
+    setTimeout(() => {
+      if (sparkle.parentNode) {
+        sparkle.remove();
+      }
+    }, 4000); // Longer cleanup time to allow for longer animations
+  }
+  
+  function startSparkleEffect() {
+    createSparkleContainer();
+    
+    // Create more sparkles for better coverage
+    sparkleInterval = setInterval(() => {
+      if (winPopup.classList.contains('show')) {
+        // Create multiple sparkles per interval for full coverage
+        for (let i = 0; i < 5; i++) {
+          createSparkle();
+        }
+      }
+    }, 150); // More frequent spawning
+    
+    // Additional sparkle burst at start
+    setTimeout(() => {
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => createSparkle(), i * 50);
+      }
+    }, 100);
+  }
+  
+  function stopSparkleEffect() {
+    if (sparkleInterval) {
+      clearInterval(sparkleInterval);
+      sparkleInterval = null;
+    }
+    if (sparkleContainer) {
+      sparkleContainer.remove();
+      sparkleContainer = null;
+    }
+  }
+  
+  // Enable click-to-close functionality after amount animation
+  function enableClickToClose() {
+    clickToCloseEnabled = true;
+    
+    // Add visual indicator that popup can be closed
+    winPopup.style.cursor = 'pointer';
+    
+    // Add click event listener to the popup itself
+    const clickHandler = (e) => {
+      if (clickToCloseEnabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideWinPopup();
+        winPopup.removeEventListener('click', clickHandler);
+        winPopup.style.cursor = 'default';
+        clickToCloseEnabled = false;
+      }
+    };
+    
+    winPopup.addEventListener('click', clickHandler);
+  }
+
   function showWinPopup(winAmount, betAmount, symbolCombo = null) {
     const multiplier = Math.round(winAmount / betAmount);
     
@@ -1398,15 +1500,23 @@ document.addEventListener('DOMContentLoaded', function() {
       winPopup.classList.add('show');
     }, 100);
 
+    // Starte Funkeln-Effekt
+    startSparkleEffect();
+
     // Animiere Titel Wort für Wort
     animateTitle(title, titleColor);
 
     // Starte Gewinn-Emoji-Wasserfall
-    startWinEmojiWaterfall(winEmojis, 8000); // 8 Sekunden Gewinn-Emojis
+    startWinEmojiWaterfall(winEmojis, 4000); // Reduced from 8000 to 4000ms for better performance
 
     // Animated Counter für die Summe
     setTimeout(() => {
       animateWinAmount(0, winAmount, 3000); // 3 Sekunden zum Hochzählen
+      
+      // Nach dem Hochzählen - Click-to-close aktivieren
+      setTimeout(() => {
+        enableClickToClose();
+      }, 3000);
     }, 1000); // Start nach 1 Sekunde
 
     // Gestaffelter Konfetti-Effekt
@@ -1450,11 +1560,19 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAmount();
   }
 
-  // Optimized Win Emoji Waterfall
+  // Optimized Win Emoji Waterfall with better cleanup
+  let winEmojiTimeout = null; // Track timeout for cleanup
+  let activeWinEmojis = new Set(); // Track active win emojis
+  
   function startWinEmojiWaterfall(emojis, duration) {
     const startTime = Date.now();
     let winEmojiCount = 0;
-    const maxWinEmojis = 30; // Limit total emojis for performance
+    const maxWinEmojis = 15; // Reduced for better performance
+    
+    // Clear any existing timeout
+    if (winEmojiTimeout) {
+      clearTimeout(winEmojiTimeout);
+    }
     
     function spawnWinEmoji() {
       if (Date.now() - startTime > duration || winEmojiCount >= maxWinEmojis) {
@@ -1464,50 +1582,83 @@ document.addEventListener('DOMContentLoaded', function() {
       const emoji = emojis[Math.floor(Math.random() * emojis.length)];
       const drop = getPooledEmoji();
       
+      if (!drop) return; // Safety check
+      
       drop.className = 'emoji-drop win-emoji';
       drop.textContent = emoji;
       drop.style.display = 'block';
-      drop.style.left = (Math.random() * 100) + 'vw'; // Simplified positioning
-      drop.style.fontSize = (Math.random() * (4.4 - 2.5) + 2.5) + 'rem'; // Increased size range (2.5-4.4rem)
-      drop.style.animationDuration = '1.5s'; // Fixed shorter duration
-      drop.style.opacity = '0.7'; // Fixed opacity for consistency
-      drop.style.animation = 'optimizedWinEmojiDrop 1.5s linear forwards';
+      drop.style.left = (Math.random() * 100) + 'vw';
+      drop.style.fontSize = (Math.random() * 0.6 + 1.8) + 'rem'; // Reduced size range for performance
+      drop.style.animationDuration = '1.2s'; // Shorter duration
+      drop.style.opacity = '0.7';
+      drop.style.animation = 'optimizedWinEmojiDrop 1.2s linear forwards';
       
       winEmojiCount++;
+      activeWinEmojis.add(drop);
       
       drop.addEventListener('animationend', () => {
         returnEmojiToPool(drop);
+        activeWinEmojis.delete(drop);
         winEmojiCount--;
       }, { once: true });
       
       // Reduced spawn frequency for performance
-      setTimeout(spawnWinEmoji, Math.random() * 200 + 100);
+      winEmojiTimeout = setTimeout(spawnWinEmoji, Math.random() * 300 + 150);
     }
     
     spawnWinEmoji();
+    
+    // Auto cleanup after duration + buffer
+    setTimeout(() => {
+      cleanupWinEmojis();
+    }, duration + 2000);
   }
 
   function hideWinPopup() {
     winPopup.classList.remove('show');
     winPopupOverlay.classList.remove('show');
     
-    // Cleanup any remaining win emojis for performance
-    cleanupWinEmojis();
+    // Stop sparkle effect
+    stopSparkleEffect();
+    
+    // Disable click-to-close
+    clickToCloseEnabled = false;
+    winPopup.style.cursor = 'default';
+    
+    // Immediate cleanup for better performance
+    forceCleanupAllEmojis();
+    
+    // Clear any pending win emoji timeouts
+    if (winEmojiTimeout) {
+      clearTimeout(winEmojiTimeout);
+      winEmojiTimeout = null;
+    }
     
     // Reset Emoji-Zustand
     setTimeout(() => {
       if (!spinning && !autoSpinActive) {
         updateSideEmojis('idle');
       }
-    }, 1000);
+    }, 500); // Reduced timeout
   }
 
-  // Cleanup function to prevent memory leaks and improve performance
+  // Enhanced cleanup function with forced cleanup
   function cleanupWinEmojis() {
-    const winEmojis = emojiWaterfall.querySelectorAll('.win-emoji');
-    winEmojis.forEach(emoji => {
+    activeWinEmojis.forEach(emoji => {
+      if (emoji && emoji.parentNode) {
+        returnEmojiToPool(emoji);
+      }
+    });
+    activeWinEmojis.clear();
+  }
+  
+  // Force cleanup all emojis for immediate performance boost
+  function forceCleanupAllEmojis() {
+    const allEmojis = emojiWaterfall.querySelectorAll('.emoji-drop');
+    allEmojis.forEach(emoji => {
       returnEmojiToPool(emoji);
     });
+    activeWinEmojis.clear();
   }
 
   // Periodic cleanup to prevent emoji buildup

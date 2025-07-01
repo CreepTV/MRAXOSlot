@@ -452,27 +452,27 @@ main {
 
 @keyframes optimizedWinEmojiDrop {
   0% {
-    transform: translateY(-60px) scale(0.9);
-    opacity: 0.4;
+    transform: translateY(-50px) scale(0.95);
+    opacity: 0.3;
   }
-  10% {
-    transform: translateY(10vh) scale(1);
+  15% {
+    transform: translateY(15vh) scale(1);
     opacity: 0.7;
   }
-  90% {
-    transform: translateY(90vh) scale(1);
-    opacity: 0.6;
+  85% {
+    transform: translateY(85vh) scale(1);
+    opacity: 0.5;
   }
   100% {
-    transform: translateY(110vh) scale(1);
+    transform: translateY(100vh) scale(1);
     opacity: 0;
   }
 }
 
 @keyframes optimizedEmojiDrop {
   0% {
-    transform: translateY(-60px) scale(0.9);
-    opacity: 0.3;
+    transform: translateY(-50px) scale(0.95);
+    opacity: 0.2;
   }
   20% {
     transform: translateY(20vh) scale(1);
@@ -480,10 +480,10 @@ main {
   }
   80% {
     transform: translateY(80vh) scale(1);
-    opacity: 0.4;
+    opacity: 0.3;
   }
   100% {
-    transform: translateY(110vh) scale(1);
+    transform: translateY(100vh) scale(1);
     opacity: 0;
   }
 }
@@ -803,11 +803,10 @@ main {
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(0, 0, 0, 0.8); /* Add semi-transparent background */
-  backdrop-filter: blur(10px);
-  z-index: 2147483647 !important; /* Maximum possible z-index value */
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2147483647 !important;
   text-align: center;
-  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.5s ease; /* Simplified transition for better performance */
   opacity: 0;
   font-family: 'Inter', sans-serif;
   color: #ffffff;
@@ -815,9 +814,11 @@ main {
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Changed from center to flex-start */
+  justify-content: flex-start;
   align-items: center;
-  padding-top: 8vh; /* Add top padding to position title near top */
+  padding-top: 8vh;
+  contain: layout style; /* CSS containment for better performance */
+  will-change: opacity; /* Only animate opacity */
 }
 
 #big-win-popup.show {
@@ -825,10 +826,10 @@ main {
   pointer-events: auto;
 }
 
-/* Title styling - Large text without background */
+/* Title styling - Optimized for performance with darker gold */
 #big-win-popup h2 {
   font-size: 6rem;
-  margin: 0 0 2rem 0; /* Reduced bottom margin since title is now at top */
+  margin: 0 0 2rem 0;
   font-weight: 900;
   letter-spacing: 6px;
   text-transform: uppercase;
@@ -836,69 +837,50 @@ main {
   z-index: 2;
   line-height: 0.9;
   text-shadow: 
-    0 0 30px rgba(255, 215, 0, 0.9),
-    0 0 60px rgba(255, 215, 0, 0.6),
-    0 0 90px rgba(255, 215, 0, 0.3),
+    0 0 20px rgba(184, 134, 11, 0.8),
+    0 0 40px rgba(184, 134, 11, 0.5),
     0 4px 8px rgba(0, 0, 0, 0.9);
-  filter: brightness(1.2) contrast(1.1);
+  filter: none; /* Removed expensive filter effects */
+  contain: layout style; /* CSS containment */
 }
 
-/* Individual word styling will be applied via JavaScript */
+/* Individual word styling - Darker gold with performance optimization */
 #big-win-popup h2 span {
   display: inline-block;
   background: linear-gradient(135deg, 
-    #FFD700 0%, 
-    #FFEF94 15%,
-    #FFFF00 30%,
-    #FFD700 45%,
-    #FFF700 60%,
-    #FFD700 75%,
-    #FFEF94 90%,
-    #FFD700 100%
+    #B8860B 0%,  /* Dark goldenrod */
+    #DAA520 25%, /* Goldenrod */
+    #CD853F 50%, /* Peru */
+    #B8860B 75%, /* Dark goldenrod */
+    #DAA520 100% /* Goldenrod */
   );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #FFD700 !important; /* Strong fallback for browsers that don't support background-clip */
-  -webkit-text-stroke: 1px #FFEF94; /* Lighter gold stroke */
-  background-size: 400% 400%;
-  animation: goldShimmer 2s ease-in-out infinite;
-  filter: 
-    drop-shadow(0 4px 8px rgba(255, 215, 0, 0.9)) 
-    drop-shadow(0 0 25px rgba(255, 215, 0, 0.8))
-    drop-shadow(0 0 40px rgba(255, 255, 0, 0.6))
-    brightness(1.3) contrast(1.2);
+  color: #B8860B !important; /* Darker gold fallback */
+  -webkit-text-stroke: 1px #CD853F; /* Darker gold stroke */
+  background-size: 200% 200%; /* Reduced size for better performance */
+  animation: optimizedGoldShimmer 3s ease-in-out infinite; /* Slower animation */
   text-shadow: 
-    0 0 30px rgba(255, 215, 0, 0.9), 
-    0 0 60px rgba(255, 215, 0, 0.6),
-    0 0 90px rgba(255, 255, 0, 0.4);
+    0 0 15px rgba(184, 134, 11, 0.8), 
+    0 0 30px rgba(184, 134, 11, 0.5);
   position: relative;
+  will-change: background-position; /* Only animate background position */
 }
 
-@keyframes goldShimmer {
+@keyframes optimizedGoldShimmer {
   0% { 
     background-position: 0% 50%;
-    transform: scale(1);
-  }
-  25% { 
-    background-position: 100% 50%;
-    transform: scale(1.02);
   }
   50% { 
-    background-position: 200% 50%;
-    transform: scale(1.05);
-  }
-  75% { 
-    background-position: 300% 50%;
-    transform: scale(1.02);
+    background-position: 100% 50%;
   }
   100% { 
-    background-position: 400% 50%;
-    transform: scale(1);
+    background-position: 200% 50%;
   }
 }
 
-/* Amount container - Bottom positioned like professional slots */
+/* Amount container - Performance optimized */
 #big-win-popup .win-amount-container {
   position: fixed;
   bottom: 15vh;
@@ -909,49 +891,48 @@ main {
     rgba(165, 42, 42, 0.95) 50%,
     rgba(139, 0, 0, 0.95) 100%
   );
-  border: 4px solid #FFD700;
+  border: 4px solid #B8860B; /* Darker gold border */
   border-radius: 25px;
-  padding: 1.5rem 3rem; /* Reduced padding for better fit */
+  padding: 1.5rem 3rem;
   box-shadow: 
-    0 0 30px rgba(255, 215, 0, 0.8),
-    0 0 60px rgba(255, 215, 0, 0.4),
+    0 0 20px rgba(184, 134, 11, 0.6), /* Darker gold shadow */
+    0 0 40px rgba(184, 134, 11, 0.3),
     inset 0 2px 0 rgba(255, 255, 255, 0.3),
     inset 0 -2px 0 rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
+  contain: layout style; /* CSS containment */
 }
 
 #big-win-popup .win-amount {
   font-size: 3.5rem;
-  color: #FFD700;
+  color: #B8860B; /* Darker gold color */
   font-weight: 900;
   margin: 0;
   text-shadow: 
-    0 0 10px rgba(255, 215, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.6),
+    0 0 10px rgba(184, 134, 11, 0.8),
+    0 0 20px rgba(184, 134, 11, 0.6),
     0 4px 8px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
-  animation: amountGlow 2s ease-in-out infinite alternate;
-  line-height: 1; /* Ensure consistent line height */
-  white-space: nowrap; /* Prevent text wrapping */
+  animation: optimizedAmountGlow 2s ease-in-out infinite alternate;
+  line-height: 1;
+  white-space: nowrap;
+  contain: layout style; /* CSS containment */
 }
 
-@keyframes amountGlow {
+@keyframes optimizedAmountGlow {
   0% { 
     text-shadow: 
-      0 0 10px rgba(255, 215, 0, 0.8),
-      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 10px rgba(184, 134, 11, 0.8),
+      0 0 20px rgba(184, 134, 11, 0.6),
       0 4px 8px rgba(0, 0, 0, 0.8);
-    transform: scale(1);
   }
   100% { 
     text-shadow: 
-      0 0 20px rgba(255, 215, 0, 1),
-      0 0 40px rgba(255, 215, 0, 0.8),
+      0 0 15px rgba(184, 134, 11, 1),
+      0 0 30px rgba(184, 134, 11, 0.8),
       0 4px 8px rgba(0, 0, 0, 0.8);
-    transform: scale(1.02);
   }
 }
 
@@ -971,26 +952,7 @@ main {
 
 /* Button hover effects - Remove since button is hidden */
 
-#big-win-popup h2 span::before {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 215, 0, 0.9) 0%,
-    rgba(255, 255, 255, 1) 25%,
-    rgba(255, 239, 148, 0.9) 50%,
-    rgba(255, 255, 255, 1) 75%,
-    rgba(255, 215, 0, 0.9) 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% 200%;
-  animation: goldShimmer 2s ease-in-out infinite;
-  filter: blur(1px);
-  z-index: -1;
-}
+/* Removed old laggy animation for performance */
 
 @keyframes textGlow {
   0% { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(244, 208, 63, 0.3); }
@@ -1107,7 +1069,7 @@ main {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* Konfetti-Animation für große Gewinne */
+/* Konfetti-Animation für große Gewinne - Über Hintergrund aber unter Titel */
 .confetti {
   position: fixed;
   top: -10px;
@@ -1118,7 +1080,7 @@ main {
   border-radius: 50%;
   animation: confettiFall 3s linear forwards;
   pointer-events: none;
-  z-index: 999;
+  z-index: 2147483645; /* Above popup background but below title (z-index: 2) */
 }
 
 .confetti:nth-child(odd) { background: #e67e22; }
@@ -1209,28 +1171,61 @@ main {
   }
 }
 
-/* Sparkle Animation für Titel-Wörter */
-@keyframes titleSparkle {
-  0% { 
-    filter: brightness(1) contrast(1);
-    text-shadow: 
-      0 0 5px currentColor,
-      0 0 10px currentColor,
-      0 0 15px currentColor;
+/* Sparkle/Twinkle effect for Big Win popup - Überall auf dem Bildschirm */
+.sparkle-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 2147483648; /* Above everything including popup title */
+  overflow: hidden;
+}
+
+.sparkle {
+  position: absolute;
+  width: 6px; /* Increased from 4px for better visibility */
+  height: 6px;
+  background: #FFD700;
+  border-radius: 50%;
+  animation: sparkleAnimation 2s ease-in-out infinite;
+  opacity: 0;
+  will-change: opacity, transform;
+  box-shadow: 0 0 10px #FFD700; /* Add glow effect */
+}
+
+.sparkle.large {
+  width: 10px; /* Increased from 6px */
+  height: 10px;
+  background: #FFEF94;
+  box-shadow: 0 0 15px #FFEF94;
+}
+
+.sparkle.small {
+  width: 3px; /* Increased from 2px */
+  height: 3px;
+  background: #FFF700;
+  box-shadow: 0 0 8px #FFF700;
+}
+
+@keyframes sparkleAnimation {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
   }
-  50% { 
-    filter: brightness(1.5) contrast(1.2);
-    text-shadow: 
-      0 0 10px currentColor,
-      0 0 20px currentColor,
-      0 0 30px currentColor,
-      0 0 40px rgba(255, 255, 255, 0.8);
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
   }
-  100% { 
-    filter: brightness(1) contrast(1);
-    text-shadow: 
-      0 0 5px currentColor,
-      0 0 10px currentColor,
-      0 0 15px currentColor;
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
   }
 }
+
+/* Add different animation delays for variety */
+.sparkle:nth-child(2n) { animation-delay: 0.3s; }
+.sparkle:nth-child(3n) { animation-delay: 0.6s; }
+.sparkle:nth-child(4n) { animation-delay: 0.9s; }
+.sparkle:nth-child(5n) { animation-delay: 1.2s; }
