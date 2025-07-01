@@ -1,4 +1,22 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Firebase balance functions
+  let balance = 1000;
+  
+  // Initialize balance from main.js functions
+  if (window.getCurrentBalance) {
+    balance = await window.getCurrentBalance();
+  } else {
+    balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+  }
+  
+  async function saveBalance(newBalance) {
+    balance = newBalance;
+    if (window.updateUserBalance) {
+      await window.updateUserBalance(newBalance);
+    } else {
+      localStorage.setItem('slot1_balance', newBalance);
+    }
+  }
   // Ladebildschirm-Logik
   function initializeLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
@@ -628,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const betMinus = document.getElementById('bet-minus');
   const betPlus = document.getElementById('bet-plus');
 
-  let balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+  // Balance is already initialized at the top
   updateBalance();
   updateBetDisplay();
 
@@ -906,6 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
     finished = [false, false, false];
     reelFinalOffsets = [0, 0, 0];
     balance -= bet;
+    saveBalance(balance); // Async save but don't await to not block UI
     updateBalance();
     resultEl.textContent = '';
     
@@ -1227,6 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (win > 0) {
       balance += win;
+      saveBalance(balance); // Async save but don't await to not block UI
       updateBalance();
       
       // Bestimme Gewinn-Level für verschiedene Meldungen und Seitenanimationen
@@ -1274,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSideEmojis('lose', 2000);
       }
     }
-    localStorage.setItem('slot1_balance', balance);
+    // Balance is already saved above when changed
   }
 
   // Enhanced Titel-Animation: Wort für Wort einblenden mit modernen Effekten
@@ -2006,6 +2026,7 @@ document.addEventListener('DOMContentLoaded', function() {
     spinTimeouts = [];
     finishReelFns = [];
     balance -= bet;
+    saveBalance(balance); // Async save but don't await to not block UI
     updateBalance();
     resultEl.textContent = '';
     spinBtn.textContent = 'Stop';

@@ -5,14 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Browsergame</title>
     <link rel="stylesheet" href="style.css">
-    <script defer src="main.js"></script>
+    
+    <!-- Einfache Version ohne Firebase für Test -->
+    <script defer src="main-simple.js"></script>
 </head>
 <body>
     <header>
         <div class="profile">
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" />
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" id="profile-img" />
+            <div class="profile-dropdown" id="profile-dropdown">
+                <div class="dropdown-content">
+                    <!-- Für nicht eingeloggte Benutzer -->
+                    <div class="guest-menu">
+                        <div class="dropdown-item" id="login-btn">
+                            <span class="dropdown-icon">🔑</span>
+                            Anmelden
+                        </div>
+                        <div class="dropdown-item" id="register-btn">
+                            <span class="dropdown-icon">📝</span>
+                            Registrieren
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item guest-info">
+                            <span class="dropdown-icon">👤</span>
+                            Gastmodus
+                        </div>
+                    </div>
+                    
+                    <!-- Für eingeloggte Benutzer -->
+                    <div class="user-menu" style="display: none;">
+                        <div class="user-info">
+                            <span class="username" id="username-display">Benutzer</span>
+                            <span class="user-email" id="email-display">user@example.com</span>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" id="profile-settings">
+                            <span class="dropdown-icon">⚙️</span>
+                            Einstellungen
+                        </div>
+                        <div class="dropdown-item" id="stats-btn">
+                            <span class="dropdown-icon">📊</span>
+                            Statistiken
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" id="logout-btn">
+                            <span class="dropdown-icon">🚪</span>
+                            Abmelden
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="header-balance"><span id="balance">1000</span> €</div>
+        <div class="header-balance"><span id="balance">1000</span></div>
     </header>
     <main>
         <section class="slot-cards">
@@ -62,7 +106,7 @@
                     <span class="feature-tag">🎵 Music</span>
                 </div>
                 <div class="play-overlay">
-                    <button class="play-btn" onclick="window.location.href='slot1.html'">
+                    <button class="play-btn" onclick="window.location.href='SlotMachine1/slot1.html'">
                         <span class="play-icon">▶</span>
                         SPIELEN
                     </button>
