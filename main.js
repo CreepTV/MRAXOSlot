@@ -1,6 +1,32 @@
 // main.js
 // Hier können später die Slot-Game-Logik und Navigation ergänzt werden
 
+// Balance Management - Global für alle Seiten
+function updateBalance() {
+    const balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+    const balanceElement = document.getElementById('balance');
+    if (balanceElement) {
+        balanceElement.textContent = balance;
+    }
+}
+
+// Balance beim Laden der Seite aktualisieren
+document.addEventListener('DOMContentLoaded', function() {
+    updateBalance();
+    
+    // Überwache LocalStorage Änderungen von anderen Tabs/Seiten
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'slot1_balance') {
+            updateBalance();
+        }
+    });
+    
+    // Überwache Focus-Events um Balance zu aktualisieren wenn User zurück zur Seite kommt
+    window.addEventListener('focus', function() {
+        updateBalance();
+    });
+});
+
 document.querySelectorAll('.slot-card').forEach(card => {
     card.addEventListener('click', () => {
         const cardText = card.textContent.trim();

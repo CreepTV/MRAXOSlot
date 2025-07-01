@@ -8,13 +8,18 @@ body {
 }
 
 header {
+  background: linear-gradient(135deg, #22223b, #9a8c98);
   width: 100vw;
-  height: 0;
+  height: 20px;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 20px;
 }
 .profile {
   position: absolute;
-  top: 2rem;
+  top: 14px;
   right: 2rem;
   z-index: 10;
 }
@@ -25,6 +30,28 @@ header {
   border: 2.5px solid #9a8c98;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
   background: #fff;
+}
+
+.header-balance {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
+  color: #1a1a1a;
+  font-size: 1.1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(244, 208, 63, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 10;
+}
+
+.header-balance::before {
+  content: "🪙";
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 main {
@@ -45,7 +72,7 @@ main {
 
 .slot-card {
   width: 160px;
-  height: 300px;
+  height: 284px; /* 9:16 aspect ratio */
   background: linear-gradient(135deg, #fff 70%, #e0c3fc 100%);
   border-radius: 22px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.13);
@@ -69,7 +96,7 @@ main {
 
 .ad-card {
   width: 400px;
-  height: 300px;
+  height: 284px; /* Matched to slot card height for consistency */
   background: linear-gradient(135deg, #ffe3e3 70%, #b8c6db 100%);
   border-radius: 26px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.13);
@@ -170,7 +197,7 @@ main {
 /* Emoji Bonanza Slot Card Design */
 .emoji-bonanza {
   width: 160px;
-  height: 300px;
+  height: 284px; /* 9:16 aspect ratio */
   background: linear-gradient(135deg, #2e2e4f 0%, #474772 40%, #f7d203 100%);
   border: 3px solid #f7d203;
   color: #f2e9e4;
@@ -418,8 +445,12 @@ main {
   }
   .slot-card {
     width: 110px;
-    height: 200px;
+    height: 196px; /* 9:16 aspect ratio for mobile */
     font-size: 1.15rem;
+  }
+  .emoji-bonanza {
+    width: 110px;
+    height: 196px; /* 9:16 aspect ratio for mobile */
   }
   .profile {
     top: 1rem;

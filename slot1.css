@@ -75,6 +75,15 @@ header .back:hover {
   font-size: 1.1rem;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 8px rgba(244, 208, 63, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.balance::before {
+  content: "🪙";
+  font-size: 1.5rem;
+  line-height: 1;
 }
 main {
   flex: 1;
@@ -803,7 +812,7 @@ main {
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0);
   z-index: 2147483647 !important;
   text-align: center;
   transition: opacity 0.5s ease; /* Simplified transition for better performance */
@@ -1080,13 +1089,13 @@ main {
   border-radius: 50%;
   animation: confettiFall 3s linear forwards;
   pointer-events: none;
-  z-index: 2147483645; /* Above popup background but below title (z-index: 2) */
+  z-index: 5147483645; /* Above popup background but below title (z-index: 2) */
 }
 
 .confetti:nth-child(odd) { background: #e67e22; }
 .confetti:nth-child(3n) { background: #e74c3c; }
 .confetti:nth-child(4n) { background: #3498db; }
-.confetti:nth-child(5n) { background: #2ecc71; }
+.confetti:nth-child(5n) { background: #cc2eac; }
 
 @keyframes confettiFall {
   0% {

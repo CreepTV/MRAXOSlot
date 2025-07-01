@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateBetDisplay() {
     bet = betSteps[betIndex];
-    betAmountEl.textContent = bet;
+    betAmountEl.innerHTML = `${bet}<span style="font-size: 1.2em; margin-left: 2px;">🪙</span>`;
   }
 
   betMinus.addEventListener('click', () => {
