@@ -1,208 +1,167 @@
-// main.js - Vereinfachte Version die definitiv funktioniert
+// main.js - Konsolidierte und funktionierende Version
 
-// Global Variables
-let currentUser = null;
-let isGuestMode = true;
-let firebaseAuth = null;
+console.log('🚀 Script lädt...');
 
-// Balance Management
-async function updateBalance() {
-    let balance = 1000; // Default
+// User State Management
+let currentUserState = {
+    isLoggedIn: false,
+    user: null,
+    userData: null
+};
+
+// DROPDOWN FUNKTIONALITÄT - SOFORT BEIM LADEN
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM geladen');
     
-    if (currentUser && !isGuestMode && firebaseAuth && firebaseAuth.getUserData) {
-        try {
-            const userData = await firebaseAuth.getUserData(currentUser.uid);
-            if (userData) {
-                balance = userData.balance || 1000;
-            }
-        } catch (error) {
-            console.error('Error getting user data:', error);
-            balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
-        }
-    } else {
-        balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
-    }
+    // Setup Firebase auth listener first
+    setupFirebaseAuthListener();
     
-    const balanceElement = document.getElementById('balance');
-    if (balanceElement) {
-        balanceElement.textContent = balance;
-    }
-}
-
-// Update User Profile Display
-function updateProfileDisplay(user, userData = null) {
-    const guestMenu = document.querySelector('.guest-menu');
-    const userMenu = document.querySelector('.user-menu');
-    const usernameDisplay = document.getElementById('username-display');
-    const emailDisplay = document.getElementById('email-display');
-    const profileImg = document.getElementById('profile-img');
+    // Check auth state (delayed to allow Firebase to load)
+    setTimeout(checkAuthState, 500);
     
-    if (user && !isGuestMode) {
-        // Logged in user
-        if (guestMenu) guestMenu.style.display = 'none';
-        if (userMenu) userMenu.style.display = 'block';
-        
-        if (userData && usernameDisplay && emailDisplay) {
-            usernameDisplay.textContent = userData.username || 'Benutzer';
-            emailDisplay.textContent = user.email;
-        } else if (usernameDisplay && emailDisplay) {
-            usernameDisplay.textContent = user.email.split('@')[0];
-            emailDisplay.textContent = user.email;
-        }
-        
-        if (profileImg) profileImg.style.border = '2.5px solid #4caf50'; // Green border for logged in
-    } else {
-        // Guest mode
-        if (guestMenu) guestMenu.style.display = 'block';
-        if (userMenu) userMenu.style.display = 'none';
-        if (profileImg) profileImg.style.border = '2.5px solid #9a8c98'; // Default border for guest
-    }
-}
-
-// Initialize Dropdown Functionality
-function initializeDropdown() {
+    // DROPDOWN SETUP - ERSTE PRIORITÄT
     const profileImg = document.getElementById('profile-img');
     const profileDropdown = document.getElementById('profile-dropdown');
     
-    console.log('Initializing dropdown...', { profileImg, profileDropdown });
+    console.log('🔍 Suche Elemente:', { profileImg, profileDropdown });
     
     if (profileImg && profileDropdown) {
-        profileImg.addEventListener('click', (e) => {
+        console.log('✅ Elemente gefunden - Setup Dropdown');
+        
+        profileImg.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            console.log('Profil geklickt!'); // Debug
-            profileDropdown.classList.toggle('active');
+            console.log('🖱️ PROFIL GEKLICKT!');
+            
+            // Toggle dropdown
+            const isActive = profileDropdown.classList.contains('active');
+            if (isActive) {
+                profileDropdown.classList.remove('active');
+                console.log('❌ Dropdown geschlossen');
+            } else {
+                profileDropdown.classList.add('active');
+                console.log('✅ Dropdown geöffnet');
+            }
         });
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!profileDropdown.contains(e.target)) {
+        // Click außerhalb schließt dropdown
+        document.addEventListener('click', function(e) {
+            if (!profileDropdown.contains(e.target) && !profileImg.contains(e.target)) {
                 profileDropdown.classList.remove('active');
             }
         });
         
-        console.log('Dropdown event listeners attached!');
+        console.log('🎯 Dropdown Event Listeners aktiv!');
     } else {
-        console.error('Profile elements not found:', { profileImg, profileDropdown });
+        console.error('❌ ELEMENTE NICHT GEFUNDEN!', {
+            profileImg: profileImg ? 'FOUND' : 'NOT FOUND',
+            profileDropdown: profileDropdown ? 'FOUND' : 'NOT FOUND'
+        });
     }
-}
+    
+    // DROPDOWN BUTTONS
+    setupDropdownButtons();
+    
+    // BALANCE
+    updateBalance();
+    
+    // SLOT CARDS
+    setupSlotCards();
+    
+    // SLIDESHOW
+    setupSlideshow();
+});
 
-// Initialize Auth Event Listeners
-function initializeAuthListeners() {
-    // Guest Menu Event Listeners
+function setupDropdownButtons() {
+    console.log('🔘 Setup Dropdown Buttons');
+    
     const loginBtn = document.getElementById('login-btn');
     const registerBtn = document.getElementById('register-btn');
     
-    console.log('Setting up auth listeners...', { loginBtn, registerBtn });
-    
     if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            console.log('Login button clicked');
+        loginBtn.addEventListener('click', function() {
+            console.log('🔑 Login geklickt');
             window.location.href = 'Login/login.html';
         });
+        console.log('✅ Login Button aktiv');
     }
-
+    
     if (registerBtn) {
-        registerBtn.addEventListener('click', () => {
-            console.log('Register button clicked');
+        registerBtn.addEventListener('click', function() {
+            console.log('📝 Register geklickt');  
             window.location.href = 'Login/login.html';
         });
+        console.log('✅ Register Button aktiv');
     }
+}
 
-    // User Menu Event Listeners
-    const logoutBtn = document.getElementById('logout-btn');
-    const profileSettings = document.getElementById('profile-settings');
-    const statsBtn = document.getElementById('stats-btn');
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            if (firebaseAuth && firebaseAuth.logoutUser) {
-                const result = await firebaseAuth.logoutUser();
-                if (result.success) {
-                    isGuestMode = true;
-                    currentUser = null;
-                    localStorage.setItem('isGuestMode', 'true');
-                    updateProfileDisplay(null);
-                    updateBalance();
+// Balance Management with Firebase Sync
+async function updateBalance() {
+    let balance = 1000; // Default fallback
+    
+    try {
+        // Check if user is logged in and Firebase is available
+        if (currentUserState.isLoggedIn && currentUserState.userData && currentUserState.userData.balance !== undefined) {
+            // Use Firebase balance for logged-in users
+            balance = currentUserState.userData.balance;
+            console.log('💰 Using Firebase balance:', balance);
+        } else if (window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+            // Try to get current user and their data
+            const currentUser = window.firebaseAuth.getCurrentUser();
+            if (currentUser) {
+                console.log('🔄 Fetching fresh balance from Firebase...');
+                const userData = await window.firebaseAuth.getUserData(currentUser.uid);
+                if (userData && userData.balance !== undefined) {
+                    balance = userData.balance;
+                    // Update current state
+                    if (currentUserState.userData) {
+                        currentUserState.userData.balance = balance;
+                    }
+                    console.log('💰 Fresh Firebase balance loaded:', balance);
+                } else {
+                    console.log('⚠️ No Firebase balance found, using localStorage');
+                    balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
                 }
-            }
-        });
-    }
-
-    if (profileSettings) {
-        profileSettings.addEventListener('click', () => {
-            alert('Einstellungen werden bald verfügbar sein!');
-        });
-    }
-
-    if (statsBtn) {
-        statsBtn.addEventListener('click', () => {
-            alert('Statistiken werden bald verfügbar sein!');
-        });
-    }
-}
-
-// Initialize Firebase Auth State Management
-function initializeFirebaseAuth() {
-    if (firebaseAuth && firebaseAuth.onAuthChange) {
-        firebaseAuth.onAuthChange(async (user) => {
-            console.log('Auth state changed:', user);
-            currentUser = user;
-            
-            if (user && !localStorage.getItem('isGuestMode')) {
-                isGuestMode = false;
-                const userData = firebaseAuth.getUserData ? await firebaseAuth.getUserData(user.uid) : null;
-                updateProfileDisplay(user, userData);
             } else {
-                isGuestMode = true;
-                updateProfileDisplay(null);
+                // Guest mode - use localStorage
+                balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+                console.log('👤 Guest mode balance:', balance);
             }
-            
-            updateBalance();
-        });
+        } else {
+            // Fallback to localStorage
+            balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
+            console.log('📱 Using localStorage balance:', balance);
+        }
+    } catch (error) {
+        console.error('❌ Error updating balance:', error);
+        balance = parseInt(localStorage.getItem('slot1_balance')) || 1000;
     }
+    
+    // Update UI
+    const balanceElement = document.getElementById('balance');
+    if (balanceElement) {
+        balanceElement.textContent = balance;
+        console.log('🎯 Balance UI updated to:', balance);
+    }
+    
+    return balance;
 }
 
-// Wait for Firebase to load
-function waitForFirebase() {
-    return new Promise((resolve) => {
-        let attempts = 0;
-        const maxAttempts = 100; // 5 seconds max
-        
-        const checkFirebase = () => {
-            attempts++;
-            if (window.firebaseAuth) {
-                firebaseAuth = window.firebaseAuth;
-                console.log('Firebase loaded successfully!');
-                resolve();
-            } else if (attempts < maxAttempts) {
-                setTimeout(checkFirebase, 50);
-            } else {
-                console.warn('Firebase failed to load, using guest mode only');
-                resolve();
-            }
-        };
-        checkFirebase();
-    });
-}
-
-// Slot Card Navigation
-function initializeSlotCards() {
+function setupSlotCards() {
     document.querySelectorAll('.slot-card').forEach(card => {
         card.addEventListener('click', () => {
-            const cardText = card.textContent.trim();
-            if (cardText === 'Slot 1' || card.classList.contains('emoji-bonanza')) {
+            if (card.classList.contains('emoji-bonanza')) {
                 window.location.href = 'SlotMachine1/slot1.html';
-            } else if (cardText === 'Slot 2') {
+            } else if (card.textContent.includes('Slot 2')) {
                 alert('Slot 2 wird bald verfügbar sein!');
-            } else if (cardText === 'Slot 3') {
+            } else if (card.textContent.includes('Slot 3')) {
                 alert('Slot 3 wird bald verfügbar sein!');
             }
         });
     });
 }
 
-// Slideshow for Ad-Card
-function initializeSlideshow() {
+function setupSlideshow() {
     const slides = document.querySelectorAll('.ad-card .slide');
     const dots = document.querySelectorAll('.ad-card .dot');
     let currentSlide = 0;
@@ -218,58 +177,351 @@ function initializeSlideshow() {
     }
 }
 
-// Main Initialization
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('DOM loaded, initializing app...');
+// Authentication State Management
+async function checkAuthState() {
+    console.log('🔍 Checking authentication state...');
     
-    // Check if coming from guest mode
-    isGuestMode = localStorage.getItem('isGuestMode') !== 'false';
-    
-    // Initialize basic functionality immediately
-    initializeDropdown();
-    initializeAuthListeners();
-    initializeSlotCards();
-    initializeSlideshow();
-    
-    // Wait for Firebase to load
-    await waitForFirebase();
-    
-    // Initialize Firebase-dependent features
-    initializeFirebaseAuth();
-    
-    // Initial balance update
-    updateBalance();
-    
-    // Monitor localStorage changes from other tabs/pages
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'slot1_balance') {
-            updateBalance();
-        }
-    });
-    
-    // Monitor focus events to update balance when user returns to page
-    window.addEventListener('focus', function() {
-        updateBalance();
-    });
-    
-    console.log('App initialization complete!');
-});
-
-// Export functions for use in slot games
-window.updateUserBalance = async function(newBalance) {
-    if (currentUser && !isGuestMode && firebaseAuth && firebaseAuth.updateUserBalance) {
-        await firebaseAuth.updateUserBalance(currentUser.uid, newBalance);
-    } else {
-        localStorage.setItem('slot1_balance', newBalance.toString());
+    // Check for guest mode first
+    const isGuestMode = localStorage.getItem('isGuestMode') === 'true';
+    if (isGuestMode) {
+        console.log('👤 User is in guest mode');
+        updateUIForGuestMode();
+        return;
     }
+    
+    // Check if Firebase is available
+    if (window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+        try {
+            const currentUser = window.firebaseAuth.getCurrentUser();
+            if (currentUser) {
+                console.log('✅ User is logged in:', currentUser.email);
+                console.log('🔄 Fetching user data...');
+                
+                try {
+                    const userData = await window.firebaseAuth.getUserData(currentUser.uid);
+                    console.log('📄 User data fetched:', userData);
+                    
+                    currentUserState = {
+                        isLoggedIn: true,
+                        user: currentUser,
+                        userData: userData
+                    };
+                    updateUIForLoggedInUser();
+                } catch (userDataError) {
+                    console.error('⚠️ Error fetching user data:', userDataError);
+                    // Still update UI with basic user info
+                    currentUserState = {
+                        isLoggedIn: true,
+                        user: currentUser,
+                        userData: null
+                    };
+                    updateUIForLoggedInUser();
+                }
+            } else {
+                console.log('ℹ️ No user logged in');
+                updateUIForGuestMode();
+            }
+        } catch (error) {
+            console.log('⚠️ Error checking auth state:', error);
+            updateUIForGuestMode();
+        }
+    } else {
+        console.log('ℹ️ Firebase not available, using guest mode');
+        updateUIForGuestMode();
+    }
+}
+
+function setupFirebaseAuthListener() {
+    if (window.firebaseAuth && window.firebaseAuth.onAuthChange) {
+        console.log('🔥 Setting up Firebase auth state listener');
+        
+        window.firebaseAuth.onAuthChange(async (user) => {
+            console.log('🔄 Auth state changed:', user ? user.email : 'No user');
+            
+            if (user) {
+                console.log('✅ User is signed in, fetching user data...');
+                
+                try {
+                    // Fetch user data from Firestore
+                    const userData = await window.firebaseAuth.getUserData(user.uid);
+                    console.log('📄 Fetched user data:', userData);
+                    
+                    currentUserState = {
+                        isLoggedIn: true,
+                        user: user,
+                        userData: userData
+                    };
+                    
+                    // Clear guest mode
+                    localStorage.removeItem('isGuestMode');
+                    
+                    // Update UI with user data
+                    updateUIForLoggedInUser();
+                    
+                } catch (error) {
+                    console.error('❌ Error fetching user data:', error);
+                    // Still update UI even if userData fetch fails
+                    currentUserState = {
+                        isLoggedIn: true,
+                        user: user,
+                        userData: null
+                    };
+                    updateUIForLoggedInUser();
+                }
+            } else {
+                console.log('ℹ️ User is signed out');
+                updateUIForGuestMode();
+            }
+        });
+    } else {
+        console.log('ℹ️ Firebase auth not available, will retry in 1 second');
+        setTimeout(setupFirebaseAuthListener, 1000);
+    }
+}
+
+function updateUIForLoggedInUser() {
+    console.log('🔄 Updating UI for logged in user');
+    console.log('👤 User data:', currentUserState.userData);
+    console.log('🆔 User info:', currentUserState.user);
+    
+    const guestMenu = document.querySelector('.guest-menu');
+    const userMenu = document.querySelector('.user-menu');
+    const usernameDisplay = document.getElementById('username-display');
+    const emailDisplay = document.getElementById('email-display');
+    
+    if (guestMenu && userMenu) {
+        guestMenu.style.display = 'none';
+        userMenu.style.display = 'block';
+        
+        // Update username display
+        if (usernameDisplay) {
+            let displayName = 'Benutzer'; // Default fallback
+            
+            if (currentUserState.userData && currentUserState.userData.username) {
+                displayName = currentUserState.userData.username;
+                console.log('✅ Using username from userData:', displayName);
+            } else if (currentUserState.user && currentUserState.user.email) {
+                // Fallback: use part of email as username
+                displayName = currentUserState.user.email.split('@')[0];
+                console.log('📧 Using email prefix as username:', displayName);
+            }
+            
+            usernameDisplay.textContent = displayName;
+            console.log('👤 Username display set to:', displayName);
+        }
+        
+        // Update email display
+        if (emailDisplay && currentUserState.user) {
+            emailDisplay.textContent = currentUserState.user.email;
+            console.log('📧 Email display set to:', currentUserState.user.email);
+        }
+        
+        // Setup logged in user event listeners
+        setupLoggedInUserButtons();
+    }
+    
+    // Update balance from Firebase if available
     updateBalance();
+}
+
+function updateUIForGuestMode() {
+    console.log('🔄 Updating UI for guest mode');
+    
+    const guestMenu = document.querySelector('.guest-menu');
+    const userMenu = document.querySelector('.user-menu');
+    
+    if (guestMenu && userMenu) {
+        guestMenu.style.display = 'block';
+        userMenu.style.display = 'none';
+    }
+    
+    currentUserState = {
+        isLoggedIn: false,
+        user: null,
+        userData: null
+    };
+    
+    // Update balance for guest mode
+    updateBalance();
+}
+
+function setupLoggedInUserButtons() {
+    console.log('🔘 Setup Logged In User Buttons');
+    
+    const publicProfileBtn = document.getElementById('public-profile-btn');
+    const profileSettingsBtn = document.getElementById('profile-settings');
+    const statsBtn = document.getElementById('stats-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    
+    if (publicProfileBtn) {
+        publicProfileBtn.addEventListener('click', function() {
+            console.log('👁️ Public profile clicked');
+            showPublicProfile();
+        });
+    }
+    
+    if (profileSettingsBtn) {
+        profileSettingsBtn.addEventListener('click', function() {
+            console.log('⚙️ Profile settings clicked');
+            alert('Profileinstellungen werden bald verfügbar sein!');
+        });
+    }
+    
+    if (statsBtn) {
+        statsBtn.addEventListener('click', function() {
+            console.log('📊 Stats clicked');
+            showUserStats();
+        });
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function() {
+            console.log('🚪 Logout clicked');
+            await handleLogout();
+        });
+    }
+}
+
+function showUserStats() {
+    if (!currentUserState.userData) {
+        alert('Keine Statistiken verfügbar');
+        return;
+    }
+    
+    const stats = currentUserState.userData;
+    const statsMessage = `📊 Deine Statistiken:
+    
+👤 Benutzername: ${stats.username || 'Unbekannt'}
+💰 Guthaben: €${stats.balance || 0}
+🎮 Spiele gespielt: ${stats.gamesPlayed || 0}
+🏆 Gesamtgewinne: €${stats.totalWinnings || 0}
+📅 Mitglied seit: ${stats.createdAt ? new Date(stats.createdAt.toDate()).toLocaleDateString('de-DE') : 'Unbekannt'}`;
+    
+    alert(statsMessage);
+}
+
+async function handleLogout() {
+    try {
+        if (window.firebaseAuth && window.firebaseAuth.logoutUser) {
+            const result = await window.firebaseAuth.logoutUser();
+            if (result.success) {
+                console.log('✅ Logout successful');
+                // Clear local state
+                localStorage.removeItem('isGuestMode');
+                // Refresh page to reset UI
+                window.location.reload();
+            } else {
+                console.error('❌ Logout failed:', result.error);
+                alert('Abmeldung fehlgeschlagen');
+            }
+        } else {
+            // Fallback: just clear local state
+            localStorage.removeItem('isGuestMode');
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('❌ Logout error:', error);
+        alert('Fehler beim Abmelden');
+    }
+}
+
+function showPublicProfile() {
+    if (!currentUserState.userData || !currentUserState.user) {
+        alert('Profildaten nicht verfügbar');
+        return;
+    }
+    
+    const userData = currentUserState.userData;
+    const user = currentUserState.user;
+    
+    // Calculate some basic stats
+    const winRate = userData.gamesPlayed > 0 ? 
+        ((userData.totalWinnings / (userData.gamesPlayed * 10)) * 100).toFixed(1) : 0; // Assuming 10 average bet
+    
+    const profileMessage = `🌟 Öffentliches Profil
+    
+👤 ${userData.username || 'Spieler'}
+📧 ${user.email}
+    
+🎮 Spielstatistiken:
+🎯 Spiele gespielt: ${userData.gamesPlayed || 0}
+🏆 Gesamtgewinne: €${userData.totalWinnings || 0}
+📈 Erfolgshäufigkeit: ${winRate}%
+💰 Aktuelles Guthaben: €${userData.balance || 0}
+
+📅 Mitglied seit: ${userData.createdAt ? new Date(userData.createdAt.toDate()).toLocaleDateString('de-DE') : 'Unbekannt'}
+
+🏅 Erfolge: ${userData.achievements && userData.achievements.length > 0 ? userData.achievements.join(', ') : 'Noch keine Erfolge'}`;
+    
+    alert(profileMessage);
+}
+
+// EXPORT FUNCTIONS for slot games
+window.updateUserBalance = async function(newBalance) {
+    try {
+        if (currentUserState.isLoggedIn && currentUserState.user && window.firebaseAuth) {
+            // Update Firebase balance for logged-in users
+            await window.firebaseAuth.updateUserBalance(currentUserState.user.uid, newBalance);
+            // Update local state
+            if (currentUserState.userData) {
+                currentUserState.userData.balance = newBalance;
+            }
+            console.log('💰 Firebase balance updated to:', newBalance);
+        } else {
+            // Update localStorage for guest users
+            localStorage.setItem('slot1_balance', newBalance.toString());
+            console.log('💰 localStorage balance updated to:', newBalance);
+        }
+        
+        // Update UI
+        await updateBalance();
+    } catch (error) {
+        console.error('❌ Error updating balance:', error);
+        // Fallback to localStorage
+        localStorage.setItem('slot1_balance', newBalance.toString());
+        await updateBalance();
+    }
 };
 
 window.getCurrentBalance = async function() {
-    if (currentUser && !isGuestMode && firebaseAuth && firebaseAuth.getUserData) {
-        const userData = await firebaseAuth.getUserData(currentUser.uid);
-        return userData ? userData.balance : 1000;
-    } else {
+    try {
+        if (currentUserState.isLoggedIn && currentUserState.userData && currentUserState.userData.balance !== undefined) {
+            return currentUserState.userData.balance;
+        } else if (currentUserState.isLoggedIn && currentUserState.user && window.firebaseAuth) {
+            // Fetch fresh balance from Firebase
+            const userData = await window.firebaseAuth.getUserData(currentUserState.user.uid);
+            if (userData && userData.balance !== undefined) {
+                // Update local state
+                if (currentUserState.userData) {
+                    currentUserState.userData.balance = userData.balance;
+                }
+                return userData.balance;
+            }
+        }
+        
+        // Fallback to localStorage
+        return parseInt(localStorage.getItem('slot1_balance')) || 1000;
+    } catch (error) {
+        console.error('❌ Error getting balance:', error);
         return parseInt(localStorage.getItem('slot1_balance')) || 1000;
     }
 };
+
+// Manual UI refresh function for debugging
+window.refreshUserUI = function() {
+    console.log('🔄 Manual UI refresh requested');
+    if (currentUserState.isLoggedIn) {
+        updateUIForLoggedInUser();
+    } else {
+        updateUIForGuestMode();
+    }
+};
+
+// Debug function to check current state
+window.debugUserState = function() {
+    console.log('🐛 Current user state:', currentUserState);
+    console.log('🔍 Firebase user:', window.firebaseAuth ? window.firebaseAuth.getCurrentUser() : 'Firebase not available');
+    return currentUserState;
+};
+
+console.log('🎯 Script geladen - Dropdown sollte funktionieren!');

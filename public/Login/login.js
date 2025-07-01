@@ -59,11 +59,18 @@ function showError(formType, message) {
     const errorElement = document.getElementById(`${formType}-error`);
     errorElement.textContent = message;
     errorElement.classList.add('show');
+    errorElement.classList.remove('success');
+}
+
+function showSuccess(formType, message) {
+    const errorElement = document.getElementById(`${formType}-error`);
+    errorElement.textContent = message;
+    errorElement.classList.add('show', 'success');
 }
 
 function clearErrors() {
     document.querySelectorAll('.form-error').forEach(error => {
-        error.classList.remove('show');
+        error.classList.remove('show', 'success');
         error.textContent = '';
     });
 }
@@ -117,9 +124,14 @@ loginForm.addEventListener('submit', async (e) => {
         // Prüfe explizit auf success === true
         if (result && result.success === true) {
             console.log('✅ Login successful, redirecting...');
+            // Zeige Erfolgsmeldung
+            showSuccess('login', '✅ Anmeldung erfolgreich! Du wirst weitergeleitet...');
+            
             // Migrate local data and redirect
             firebaseAuth.migrateLocalToFirebase(result.user);
-            window.location.href = '../index.html';
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 1500); // 1.5 Sekunden warten
         } else {
             console.log('❌ Login failed:', result);
             let errorMessage = 'Anmeldung fehlgeschlagen.';
@@ -194,10 +206,13 @@ registerForm.addEventListener('submit', async (e) => {
         // Prüfe explizit auf success === true
         if (result && result.success === true) {
             console.log('✅ Registration successful, redirecting...');
-            // Registration successful, redirect
+            // Zeige Erfolgsmeldung
+            showSuccess('register', '✅ Registrierung erfolgreich! Du wirst weitergeleitet...');
+            
+            // Registration successful, redirect after showing success message
             setTimeout(() => {
                 window.location.href = '../index.html';
-            }, 500);
+            }, 2000); // 2 Sekunden warten, damit User die Nachricht sieht
         } else {
             console.log('❌ Registration failed:', result);
             
@@ -211,9 +226,12 @@ registerForm.addEventListener('submit', async (e) => {
                 
                 if (loginResult && loginResult.success === true) {
                     console.log('✅ User exists and login successful - registration actually worked!');
+                    // Zeige Erfolgsmeldung auch für diesen Fall
+                    showSuccess('register', '✅ Registrierung erfolgreich! Du wirst weitergeleitet...');
+                    
                     setTimeout(() => {
                         window.location.href = '../index.html';
-                    }, 500);
+                    }, 2000);
                     return; // Erfolgreich! Beende die Funktion hier
                 }
             } catch (loginError) {
@@ -252,7 +270,14 @@ registerForm.addEventListener('submit', async (e) => {
 guestBtn.addEventListener('click', () => {
     // Set guest mode flag
     localStorage.setItem('isGuestMode', 'true');
-    window.location.href = '../index.html';
+    
+    // Zeige kurze Erfolgsmeldung
+    guestBtn.innerHTML = '<span class="btn-icon">✅</span> Als Gast angemeldet...';
+    guestBtn.disabled = true;
+    
+    setTimeout(() => {
+        window.location.href = '../index.html';
+    }, 1000);
 });
 
 // Back Button Handler
