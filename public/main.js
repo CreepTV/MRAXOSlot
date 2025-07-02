@@ -13,6 +13,13 @@ let currentUserState = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM geladen');
     
+    // Hide guest warning initially to prevent flash
+    const guestWarning = document.getElementById('guest-warning');
+    if (guestWarning) {
+        guestWarning.style.display = 'none';
+        console.log('🔄 Guest warning initially hidden');
+    }
+    
     // Setup Firebase auth listener first
     setupFirebaseAuthListener();
     
@@ -133,6 +140,15 @@ function toggleGuestWarning(show) {
     }
 }
 
+// Force hide guest warning immediately (for when user logs in during delay)
+function forceHideGuestWarning() {
+    const guestWarning = document.getElementById('guest-warning');
+    if (guestWarning) {
+        guestWarning.style.display = 'none';
+        console.log('🚫 Guest warning force hidden');
+    }
+}
+
 // Vereinfachtes Balance Management
 async function updateBalance() {
     let balance = 1000;
@@ -181,7 +197,7 @@ function setupSlotCards() {
     document.querySelectorAll('.slot-card').forEach(card => {
         card.addEventListener('click', () => {
             if (card.classList.contains('emoji-bonanza')) {
-                window.location.href = 'SlotMachine1/slot1.html';
+                window.location.href = '/EmojiBonanza';
             } else if (card.textContent.includes('Slot 2')) {
                 alert('Slot 2 wird bald verfügbar sein!');
             } else if (card.textContent.includes('Slot 3')) {
@@ -396,8 +412,8 @@ function updateUIForLoggedInUser() {
         guestMenu.style.display = 'none';
         userMenu.style.display = 'block';
         
-        // Hide guest warning for logged in users
-        toggleGuestWarning(false);
+        // Hide guest warning for logged in users immediately
+        forceHideGuestWarning();
         
         // Update username display
         if (usernameDisplay) {
@@ -467,8 +483,13 @@ function updateUIForGuestMode() {
         guestMenu.style.display = 'block';
         userMenu.style.display = 'none';
         
-        // Show guest warning for non-logged in users
-        toggleGuestWarning(true);
+        // Delay showing guest warning to allow Firebase to load
+        setTimeout(() => {
+            // Double-check if user is still not logged in after delay
+            if (!currentUserState.isLoggedIn) {
+                toggleGuestWarning(true);
+            }
+        }, 2000); // Wait 2 seconds before showing warning
     }
     
     // Reset profile image to default for guest mode
@@ -506,7 +527,7 @@ function setupLoggedInUserButtons() {
     if (profileSettingsBtn) {
         profileSettingsBtn.addEventListener('click', function() {
             console.log('⚙️ Profile settings clicked');
-            alert('Profileinstellungen werden bald verfügbar sein!');
+            openAccountSettingsModal();
         });
     }
     
@@ -596,7 +617,8 @@ function openProfileModal(userData, isOwnProfile = true) {
     if (countrySpan) {
         if (userData.country) {
             const flagUrl = getCountryFlag(userData.country);
-            countrySpan.innerHTML = `<img class="country-flag" src="${flagUrl}" alt="${userData.country}" onerror="this.src='https://flagcdn.com/w40/xx.png'" />${userData.country}`;
+            const displayName = getCountryDisplayName(userData.country);
+            countrySpan.innerHTML = `<img class="country-flag" src="${flagUrl}" alt="${userData.country}" onerror="this.src='https://flagcdn.com/w40/xx.png'" />${displayName}`;
         } else {
             countrySpan.innerHTML = `<img class="country-flag" src="https://flagcdn.com/w40/xx.png" alt="Unknown" />Land unbekannt`;
         }
@@ -658,12 +680,7 @@ function openProfileModal(userData, isOwnProfile = true) {
     // Editier-Button nur für eigenes Profil
     const editBtn = document.getElementById('edit-profile-btn');
     if (editBtn) {
-        editBtn.style.display = isOwnProfile ? 'inline-block' : 'none';
-    }
-    
-    const editSection = document.getElementById('profile-modal-edit');
-    if (editSection) {
-        editSection.style.display = 'none';
+        editBtn.style.display = isOwnProfile ? 'inline-flex' : 'none';
     }
 
     // Modal anzeigen
@@ -677,79 +694,66 @@ function openProfileModal(userData, isOwnProfile = true) {
     console.log('✅ Profile modal shown');
 }
 
-// Hilfsfunktion: Flaggen-URL aus Land
+// Hilfsfunktion: Flaggen-URL aus Land (mit Custom-Land-Support)
 function getCountryFlag(country) {
+    // First, check if it's a custom country defined in HTML
+    const customCountryItem = document.querySelector(`#custom-country-select .select-item[data-value="${country}"]`);
+    if (customCountryItem) {
+        const customFlag = customCountryItem.querySelector('.flag-icon');
+        if (customFlag && customFlag.src) {
+            return customFlag.src;
+        }
+    }
+    
+    // Fallback to standard country codes
     const flagCodes = {
-        'Germany': 'de',
-        'Austria': 'at',
-        'Switzerland': 'ch',
-        'France': 'fr',
-        'Italy': 'it',
-        'Spain': 'es',
-        'Poland': 'pl',
-        'Netherlands': 'nl',
-        'Turkey': 'tr',
-        'UK': 'gb',
-        'United Kingdom': 'gb',
-        'USA': 'us',
-        'Canada': 'ca',
-        'Russia': 'ru',
-        'Japan': 'jp',
-        'China': 'cn',
-        'Brazil': 'br',
-        'Australia': 'au'
+        'Germany': 'de', 'Austria': 'at', 'Switzerland': 'ch', 'France': 'fr', 'Italy': 'it', 'Spain': 'es',
+        'Poland': 'pl', 'Netherlands': 'nl', 'Turkey': 'tr', 'UK': 'gb', 'United Kingdom': 'gb', 'USA': 'us',
+        'Canada': 'ca', 'Russia': 'ru', 'Japan': 'jp', 'China': 'cn', 'Brazil': 'br', 'Australia': 'au',
+        'Mexico': 'mx', 'Argentina': 'ar', 'India': 'in', 'South Korea': 'kr', 'Thailand': 'th', 'Vietnam': 'vn',
+        'Indonesia': 'id', 'Malaysia': 'my', 'Singapore': 'sg', 'Philippines': 'ph', 'Norway': 'no', 'Sweden': 'se',
+        'Denmark': 'dk', 'Finland': 'fi', 'Belgium': 'be', 'Luxembourg': 'lu', 'Czech Republic': 'cz', 'Slovakia': 'sk',
+        'Hungary': 'hu', 'Romania': 'ro', 'Bulgaria': 'bg', 'Croatia': 'hr', 'Slovenia': 'si', 'Serbia': 'rs',
+        'Portugal': 'pt', 'Greece': 'gr', 'Ukraine': 'ua', 'Belarus': 'by', 'Estonia': 'ee', 'Latvia': 'lv',
+        'Lithuania': 'lt', 'Iceland': 'is', 'Ireland': 'ie', 'Malta': 'mt', 'Cyprus': 'cy', 'Israel': 'il',
+        'UAE': 'ae', 'Saudi Arabia': 'sa', 'Egypt': 'eg', 'South Africa': 'za', 'Nigeria': 'ng', 'Kenya': 'ke',
+        'Morocco': 'ma', 'Algeria': 'dz', 'Tunisia': 'tn', 'Chile': 'cl', 'Peru': 'pe', 'Colombia': 'co',
+        'Venezuela': 've', 'Uruguay': 'uy', 'Paraguay': 'py', 'Ecuador': 'ec', 'Bolivia': 'bo', 'New Zealand': 'nz'
     };
     const countryCode = flagCodes[country];
     return countryCode ? `https://flagcdn.com/w40/${countryCode}.png` : 'https://flagcdn.com/w40/xx.png';
 }
 
-// Hilfsfunktion: Deutsche Ländernamen
+// Hilfsfunktion: Deutsche Ländernamen (mit Custom-Land-Support)
 function getCountryDisplayName(country) {
+    // First, check if it's a custom country defined in HTML
+    const customCountryItem = document.querySelector(`#custom-country-select .select-item[data-value="${country}"]`);
+    if (customCountryItem) {
+        const customName = customCountryItem.querySelector('span');
+        if (customName && customName.textContent) {
+            return customName.textContent;
+        }
+    }
+    
+    // Fallback to standard country names
     const displayNames = {
-        'Germany': 'Deutschland',
-        'Austria': 'Österreich',
-        'Switzerland': 'Schweiz',
-        'France': 'Frankreich',
-        'Italy': 'Italien',
-        'Spain': 'Spanien',
-        'Poland': 'Polen',
-        'Netherlands': 'Niederlande',
-        'Turkey': 'Türkei',
-        'UK': 'Vereinigtes Königreich',
-        'United Kingdom': 'Vereinigtes Königreich',
-        'USA': 'USA',
-        'Canada': 'Kanada',
-        'Russia': 'Russland',
-        'Japan': 'Japan',
-        'China': 'China',
-        'Brazil': 'Brasilien',
-        'Australia': 'Australien'
+        'Germany': 'Deutschland', 'Austria': 'Österreich', 'Switzerland': 'Schweiz', 'France': 'Frankreich',
+        'Italy': 'Italien', 'Spain': 'Spanien', 'Poland': 'Polen', 'Netherlands': 'Niederlande', 'Turkey': 'Türkei',
+        'UK': 'Vereinigtes Königreich', 'United Kingdom': 'Vereinigtes Königreich', 'USA': 'USA', 'Canada': 'Kanada',
+        'Russia': 'Russland', 'Japan': 'Japan', 'China': 'China', 'Brazil': 'Brasilien', 'Australia': 'Australien',
+        'Mexico': 'Mexiko', 'Argentina': 'Argentinien', 'India': 'Indien', 'South Korea': 'Südkorea', 'Thailand': 'Thailand',
+        'Vietnam': 'Vietnam', 'Indonesia': 'Indonesien', 'Malaysia': 'Malaysia', 'Singapore': 'Singapur', 'Philippines': 'Philippinen',
+        'Norway': 'Norwegen', 'Sweden': 'Schweden', 'Denmark': 'Dänemark', 'Finland': 'Finnland', 'Belgium': 'Belgien',
+        'Luxembourg': 'Luxemburg', 'Czech Republic': 'Tschechien', 'Slovakia': 'Slowakei', 'Hungary': 'Ungarn',
+        'Romania': 'Rumänien', 'Bulgaria': 'Bulgarien', 'Croatia': 'Kroatien', 'Slovenia': 'Slowenien', 'Serbia': 'Serbien',
+        'Portugal': 'Portugal', 'Greece': 'Griechenland', 'Ukraine': 'Ukraine', 'Belarus': 'Belarus', 'Estonia': 'Estland',
+        'Latvia': 'Lettland', 'Lithuania': 'Litauen', 'Iceland': 'Island', 'Ireland': 'Irland', 'Malta': 'Malta',
+        'Cyprus': 'Zypern', 'Israel': 'Israel', 'UAE': 'VAE', 'Saudi Arabia': 'Saudi-Arabien', 'Egypt': 'Ägypten',
+        'South Africa': 'Südafrika', 'Nigeria': 'Nigeria', 'Kenya': 'Kenia', 'Morocco': 'Marokko', 'Algeria': 'Algerien',
+        'Tunisia': 'Tunesien', 'Chile': 'Chile', 'Peru': 'Peru', 'Colombia': 'Kolumbien', 'Venezuela': 'Venezuela',
+        'Uruguay': 'Uruguay', 'Paraguay': 'Paraguay', 'Ecuador': 'Ecuador', 'Bolivia': 'Bolivien', 'New Zealand': 'Neuseeland'
     };
     return displayNames[country] || country;
-}
-
-// Update flag in select visually (for Chrome/Edge)
-function updateCountryFlagInSelect() {
-    const select = document.getElementById('edit-country');
-    if (!select) return;
-    
-    // Entferne alte Flaggen-Anzeige wenn vorhanden
-    const existingFlag = select.parentNode.querySelector('.select-flag-preview');
-    if (existingFlag) {
-        existingFlag.remove();
-    }
-    
-    if (select.value) {
-        const flagUrl = getCountryFlag(select.value);
-        const flagImg = document.createElement('img');
-        flagImg.src = flagUrl;
-        flagImg.className = 'select-flag-preview';
-        flagImg.alt = select.value;
-        flagImg.onerror = function() { this.src = 'https://flagcdn.com/w40/xx.png'; };
-        
-        // Füge die Flagge vor dem Select ein
-        select.parentNode.insertBefore(flagImg, select);
-    }
 }
 
 // Modal schließen
@@ -770,25 +774,108 @@ window.onclick = function(event) {
 // Bearbeiten-Button
 if (document.getElementById('edit-profile-btn')) {
     document.getElementById('edit-profile-btn').onclick = function() {
-        document.getElementById('profile-modal-edit').style.display = 'block';
-        updateCountryFlagInSelect();
+        enterEditMode();
     };
-}
-
-// Live-Flagge beim Wechseln des Landes
-if (document.getElementById('edit-country')) {
-    document.getElementById('edit-country').addEventListener('change', updateCountryFlagInSelect);
 }
 
 // Speichern-Button
 if (document.getElementById('save-profile-btn')) {
     document.getElementById('save-profile-btn').onclick = async function() {
-        const username = document.getElementById('edit-username').value.trim();
-        const comment = document.getElementById('edit-comment').value.trim();
-        const imglink = document.getElementById('edit-imglink').value.trim();
-        const country = document.getElementById('edit-country').value;
-        if (!currentUserState.user) return;
+        await saveProfile();
+    };
+}
+
+// Abbrechen-Button
+if (document.getElementById('cancel-edit-btn')) {
+    document.getElementById('cancel-edit-btn').onclick = function() {
+        exitEditMode();
+    };
+}
+
+// Inline Editing Functions
+function enterEditMode() {
+    // Hide display elements
+    document.getElementById('profile-modal-username').style.display = 'none';
+    document.getElementById('profile-modal-country').style.display = 'none';
+    document.getElementById('profile-modal-comment').style.display = 'none';
+    // Keep profile image visible in edit mode
+    
+    // Show edit elements
+    document.getElementById('edit-username').style.display = 'block';
+    document.getElementById('edit-country-container').style.display = 'block';
+    document.getElementById('edit-comment').style.display = 'block';
+    document.getElementById('edit-imglink').style.display = 'block';
+    
+    // Hide edit button, show save/cancel buttons
+    document.getElementById('edit-profile-btn').style.display = 'none';
+    document.getElementById('save-profile-btn').style.display = 'flex';
+    document.getElementById('cancel-edit-btn').style.display = 'flex';
+    
+    // Fill edit fields with current values
+    const currentData = currentUserState.userData || {};
+    document.getElementById('edit-username').value = currentData.username || '';
+    document.getElementById('edit-comment').value = currentData.comment || '';
+    document.getElementById('edit-imglink').value = currentData.imglink || '';
+    document.getElementById('edit-country').value = currentData.country || 'Germany';
+    
+    // Update country select display
+    updateCustomCountrySelect(currentData.country || 'Germany');
+    
+    // Setup custom country select
+    setTimeout(() => {
+        setupCustomCountrySelect();
+    }, 50);
+}
+
+// Live update profile image when URL changes
+if (document.getElementById('edit-imglink')) {
+    document.getElementById('edit-imglink').addEventListener('input', function() {
+        const newUrl = this.value.trim();
+        const profileImg = document.getElementById('profile-modal-img');
         
+        if (newUrl && profileImg) {
+            // Test if the URL is valid by creating a temporary image
+            const testImg = new Image();
+            testImg.onload = function() {
+                profileImg.src = newUrl;
+            };
+            testImg.onerror = function() {
+                // If image fails to load, keep current image
+                console.log('Invalid image URL');
+            };
+            testImg.src = newUrl;
+        }
+    });
+}
+
+function exitEditMode() {
+    // Show display elements
+    document.getElementById('profile-modal-username').style.display = 'block';
+    document.getElementById('profile-modal-country').style.display = 'flex';
+    document.getElementById('profile-modal-comment').style.display = 'block';
+    // Profile image stays visible
+    
+    // Hide edit elements
+    document.getElementById('edit-username').style.display = 'none';
+    document.getElementById('edit-country-container').style.display = 'none';
+    document.getElementById('edit-comment').style.display = 'none';
+    document.getElementById('edit-imglink').style.display = 'none';
+    
+    // Show edit button, hide save/cancel buttons
+    document.getElementById('edit-profile-btn').style.display = 'flex';
+    document.getElementById('save-profile-btn').style.display = 'none';
+    document.getElementById('cancel-edit-btn').style.display = 'none';
+}
+
+async function saveProfile() {
+    const username = document.getElementById('edit-username').value.trim();
+    const comment = document.getElementById('edit-comment').value.trim();
+    const imglink = document.getElementById('edit-imglink').value.trim();
+    const country = document.getElementById('edit-country').value;
+    
+    if (!currentUserState.user) return;
+    
+    try {
         // Update in Firestore
         await window.firebaseAuth.updateUserStats(currentUserState.user.uid, {
             username, comment, imglink, country
@@ -808,9 +895,14 @@ if (document.getElementById('save-profile-btn')) {
         // Update UI with new data
         updateUIForLoggedInUser();
         
+        // Refresh the modal with new data and exit edit mode
         openProfileModal(currentUserState.userData, true);
-        document.getElementById('profile-modal-edit').style.display = 'none';
-    };
+        exitEditMode();
+        
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        alert('Fehler beim Speichern des Profils');
+    }
 }
 
 // Öffne eigenes Profil aus Dropdown
@@ -889,29 +981,6 @@ function setupGuestProfileButton() {
         });
         console.log('✅ Guest profile button setup');
     }
-    
-    // TEST: Füge temporären Test-Button hinzu
-    const testBtn = document.createElement('button');
-    testBtn.textContent = 'Test Profil-Popup';
-    testBtn.style.position = 'fixed';
-    testBtn.style.top = '100px';
-    testBtn.style.left = '10px';
-    testBtn.style.zIndex = '1000';
-    testBtn.style.background = '#d4af37';
-    testBtn.style.color = '#1a1a1a';
-    testBtn.style.border = 'none';
-    testBtn.style.padding = '10px 15px';
-    testBtn.style.borderRadius = '8px';
-    testBtn.style.cursor = 'pointer';
-    testBtn.style.fontWeight = 'bold';
-    
-    testBtn.addEventListener('click', function() {
-        console.log('🧪 Test profile button clicked');
-        showGuestProfile();
-    });
-    
-    document.body.appendChild(testBtn);
-    console.log('✅ Test profile button added');
 }
 
 function showGuestProfile() {
@@ -934,6 +1003,48 @@ function showGuestProfile() {
     openProfileModal(guestData, false);
 }
 
+// Generate country select options dynamically
+function generateCountryOptions() {
+    const countries = [
+        // Popular countries first (some already in HTML)
+        'Germany', 'Austria', 'Switzerland', 'France', 'Italy', 'Spain', 'Poland', 'Netherlands', 'Turkey',
+        'UK', 'USA', 'Canada', 'Russia', 'Japan', 'China', 'Brazil', 'Australia', 
+        // Additional countries
+        'Mexico', 'Argentina', 'India', 'South Korea', 'Thailand', 'Vietnam', 'Indonesia', 'Malaysia', 
+        'Singapore', 'Philippines', 'Norway', 'Sweden', 'Denmark', 'Finland', 'Belgium', 'Luxembourg', 
+        'Czech Republic', 'Slovakia', 'Hungary', 'Romania', 'Bulgaria', 'Croatia', 'Slovenia', 'Serbia', 
+        'Portugal', 'Greece', 'Ukraine', 'Belarus', 'Estonia', 'Latvia', 'Lithuania', 'Iceland', 'Ireland', 
+        'Malta', 'Cyprus', 'Israel', 'UAE', 'Saudi Arabia', 'Egypt', 'South Africa', 'Nigeria', 'Kenya', 
+        'Morocco', 'Algeria', 'Tunisia', 'Chile', 'Peru', 'Colombia', 'Venezuela', 'Uruguay', 'Paraguay', 
+        'Ecuador', 'Bolivia', 'New Zealand'
+    ];
+    
+    const selectItems = document.querySelector('#custom-country-select .select-items');
+    if (selectItems) {
+        // Don't clear existing items - preserve manually added countries in HTML
+        
+        // Add all countries dynamically, but skip if already exists
+        countries.forEach(country => {
+            // Skip if already exists (preserves manually added countries)
+            if (selectItems.querySelector(`[data-value="${country}"]`)) return;
+            
+            const item = document.createElement('div');
+            item.className = 'select-item';
+            item.setAttribute('data-value', country);
+            
+            const flagUrl = getCountryFlag(country);
+            const displayName = getCountryDisplayName(country);
+            
+            item.innerHTML = `
+                <img class="flag-icon" src="${flagUrl}" alt="${country}">
+                <span>${displayName}</span>
+            `;
+            
+            selectItems.appendChild(item);
+        });
+    }
+}
+
 // Setup custom country select dropdown
 function setupCustomCountrySelect() {
     const customSelect = document.getElementById('custom-country-select');
@@ -941,6 +1052,9 @@ function setupCustomCountrySelect() {
         console.log('❌ Custom select not found');
         return;
     }
+    
+    // Generate country options dynamically first
+    generateCountryOptions();
     
     const selectedDiv = customSelect.querySelector('.select-selected');
     const itemsDiv = customSelect.querySelector('.select-items');
@@ -1035,4 +1149,507 @@ function updateProfileImage(imageUrl) {
         profileImg.onerror = null; // Remove any error handlers
         console.log('🖼️ Profile image reset to default');
     }
+}
+
+// Update custom country select display
+function updateCustomCountrySelect(country) {
+    const flagUrl = getCountryFlag(country);
+    const displayName = getCountryDisplayName(country);
+    const customSelect = document.getElementById('custom-country-select');
+    
+    if (customSelect) {
+        const selectedDiv = customSelect.querySelector('.select-selected');
+        if (selectedDiv) {
+            selectedDiv.querySelector('.flag-icon').src = flagUrl;
+            selectedDiv.querySelector('.country-name').textContent = displayName;
+        }
+    }
+}
+
+// Generate country options on page load
+document.addEventListener('DOMContentLoaded', function() {
+    generateCountryOptions();
+    setupAccountSettingsModal();
+});
+
+// Account Settings Modal Funktionalität
+function setupAccountSettingsModal() {
+    console.log('🔧 Setting up Account Settings Modal');
+    
+    // Modal-Elemente
+    const profileSettingsBtn = document.getElementById('profile-settings');
+    const accountSettingsModal = document.getElementById('account-settings-modal');
+    const closeAccountSettingsBtn = document.getElementById('close-account-settings-modal');
+    
+    // Account Settings Buttons
+    const changeEmailBtn = document.getElementById('change-email-btn');
+    const changePasswordBtn = document.getElementById('change-password-btn');
+    const enable2FACheckbox = document.getElementById('enable-2fa');
+    const verify2FABtn = document.getElementById('verify-2fa-btn');
+    const logoutAllDevicesBtn = document.getElementById('logout-all-devices-btn');
+    const deleteAccountBtn = document.getElementById('delete-account-btn');
+    
+    // Delete Account Confirmation Modal
+    const deleteConfirmModal = document.getElementById('delete-account-confirm-modal');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    
+    // Event Listeners
+    if (profileSettingsBtn) {
+        profileSettingsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openAccountSettingsModal();
+        });
+    }
+    
+    if (closeAccountSettingsBtn) {
+        closeAccountSettingsBtn.addEventListener('click', function() {
+            closeAccountSettingsModal();
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (accountSettingsModal) {
+        accountSettingsModal.addEventListener('click', function(e) {
+            if (e.target === accountSettingsModal) {
+                closeAccountSettingsModal();
+            }
+        });
+    }
+    
+    // E-Mail ändern
+    if (changeEmailBtn) {
+        changeEmailBtn.addEventListener('click', handleEmailChange);
+    }
+    
+    // Passwort ändern
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', handlePasswordChange);
+    }
+    
+    // 2FA Toggle
+    if (enable2FACheckbox) {
+        enable2FACheckbox.addEventListener('change', handle2FAToggle);
+    }
+    
+    // 2FA Verifizierung
+    if (verify2FABtn) {
+        verify2FABtn.addEventListener('click', handle2FAVerification);
+    }
+    
+    // Alle Geräte abmelden
+    if (logoutAllDevicesBtn) {
+        logoutAllDevicesBtn.addEventListener('click', handleLogoutAllDevices);
+    }
+    
+    // Konto löschen
+    if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', function() {
+            showDeleteConfirmModal();
+        });
+    }
+    
+    // Delete Confirmation Modal Events
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', handleAccountDeletion);
+    }
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            hideDeleteConfirmModal();
+        });
+    }
+    
+    // Close delete confirmation modal when clicking outside
+    if (deleteConfirmModal) {
+        deleteConfirmModal.addEventListener('click', function(e) {
+            if (e.target === deleteConfirmModal) {
+                hideDeleteConfirmModal();
+            }
+        });
+    }
+}
+
+function openAccountSettingsModal() {
+    console.log('🔧 Opening Account Settings Modal');
+    const modal = document.getElementById('account-settings-modal');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    
+    if (modal) {
+        // Close profile dropdown first
+        if (profileDropdown && profileDropdown.classList.contains('active')) {
+            profileDropdown.classList.remove('active');
+        }
+        
+        // Show modal with proper centering
+        modal.style.display = 'flex';
+        modal.classList.add('modal-show');
+        document.body.style.overflow = 'hidden';
+        
+        // Load current user data
+        loadAccountSettings();
+    }
+}
+
+function closeAccountSettingsModal() {
+    console.log('🔧 Closing Account Settings Modal');
+    const modal = document.getElementById('account-settings-modal');
+    
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('modal-show');
+        document.body.style.overflow = 'auto';
+        
+        // Reset form fields
+        resetAccountSettingsForm();
+    }
+}
+
+function loadAccountSettings() {
+    console.log('📊 Loading account settings');
+    
+    // Load current email
+    const currentEmailElement = document.getElementById('current-email');
+    if (currentEmailElement && currentUserState.user) {
+        currentEmailElement.textContent = currentUserState.user.email || 'Nicht verfügbar';
+    }
+    
+    // Load security info
+    const lastLoginElement = document.getElementById('last-login');
+    const accountCreatedElement = document.getElementById('account-created');
+    
+    if (lastLoginElement) {
+        lastLoginElement.textContent = formatDate(new Date());
+    }
+    
+    if (accountCreatedElement && currentUserState.user) {
+        const creationTime = currentUserState.user.metadata?.creationTime;
+        if (creationTime) {
+            accountCreatedElement.textContent = formatDate(new Date(creationTime));
+        }
+    }
+    
+    // Load 2FA status
+    const enable2FACheckbox = document.getElementById('enable-2fa');
+    if (enable2FACheckbox && currentUserState.userData) {
+        enable2FACheckbox.checked = currentUserState.userData.twoFactorEnabled || false;
+    }
+}
+
+function resetAccountSettingsForm() {
+    console.log('🔄 Resetting account settings form');
+    
+    // Clear input fields
+    document.getElementById('new-email').value = '';
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+    document.getElementById('verification-code').value = '';
+    document.getElementById('delete-confirm-password').value = '';
+    
+    // Hide QR code section
+    const qrSection = document.getElementById('qr-code-section');
+    if (qrSection) {
+        qrSection.style.display = 'none';
+    }
+}
+
+async function handleEmailChange() {
+    console.log('📧 Changing email address');
+    
+    const newEmail = document.getElementById('new-email').value.trim();
+    
+    if (!newEmail) {
+        showNotification('Bitte gib eine neue E-Mail Adresse ein.', 'error');
+        return;
+    }
+    
+    if (!isValidEmail(newEmail)) {
+        showNotification('Bitte gib eine gültige E-Mail Adresse ein.', 'error');
+        return;
+    }
+    
+    try {
+        // Firebase Email Update
+        if (firebase.auth().currentUser) {
+            await firebase.auth().currentUser.updateEmail(newEmail);
+            showNotification('E-Mail Adresse erfolgreich geändert!', 'success');
+            
+            // Update display
+            const currentEmailElement = document.getElementById('current-email');
+            if (currentEmailElement) {
+                currentEmailElement.textContent = newEmail;
+            }
+            
+            // Clear input
+            document.getElementById('new-email').value = '';
+        }
+    } catch (error) {
+        console.error('Error changing email:', error);
+        let errorMessage = 'Fehler beim Ändern der E-Mail Adresse.';
+        
+        if (error.code === 'auth/requires-recent-login') {
+            errorMessage = 'Bitte melde dich erneut an, um deine E-Mail zu ändern.';
+        } else if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'Diese E-Mail Adresse wird bereits verwendet.';
+        }
+        
+        showNotification(errorMessage, 'error');
+    }
+}
+
+async function handlePasswordChange() {
+    console.log('🔐 Changing password');
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showNotification('Bitte fülle alle Passwort-Felder aus.', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showNotification('Die neuen Passwörter stimmen nicht überein.', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showNotification('Das neue Passwort muss mindestens 6 Zeichen lang sein.', 'error');
+        return;
+    }
+    
+    try {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            throw new Error('Kein Benutzer angemeldet');
+        }
+        
+        // Re-authenticate user
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+        await user.reauthenticateWithCredential(credential);
+        
+        // Update password
+        await user.updatePassword(newPassword);
+        
+        showNotification('Passwort erfolgreich geändert!', 'success');
+        
+        // Clear form fields
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        
+    } catch (error) {
+        console.error('Error changing password:', error);
+        let errorMessage = 'Fehler beim Ändern des Passworts.';
+        
+        if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Das aktuelle Passwort ist falsch.';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'Das neue Passwort ist zu schwach.';
+        }
+        
+        showNotification(errorMessage, 'error');
+    }
+}
+
+function handle2FAToggle() {
+    console.log('🛡️ Toggling 2FA');
+    
+    const checkbox = document.getElementById('enable-2fa');
+    const qrSection = document.getElementById('qr-code-section');
+    
+    if (checkbox.checked) {
+        // Show QR code section for setup
+        if (qrSection) {
+            qrSection.style.display = 'block';
+            generate2FAQR();
+        }
+    } else {
+        // Disable 2FA
+        if (qrSection) {
+            qrSection.style.display = 'none';
+        }
+        disable2FA();
+    }
+}
+
+function generate2FAQR() {
+    console.log('📱 Generating 2FA QR Code');
+    
+    const qrCodeDisplay = document.getElementById('qr-code-display');
+    if (qrCodeDisplay) {
+        // In a real implementation, you would generate an actual QR code
+        // For now, we'll show a placeholder
+        qrCodeDisplay.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <p>📱 QR-Code Platzhalter</p>
+                <p style="font-size: 0.8rem; color: #666;">
+                    In einer echten Implementierung würde hier<br>
+                    ein QR-Code für die Authenticator App stehen.
+                </p>
+            </div>
+        `;
+    }
+}
+
+async function handle2FAVerification() {
+    console.log('✅ Verifying 2FA');
+    
+    const verificationCode = document.getElementById('verification-code').value.trim();
+    
+    if (!verificationCode) {
+        showNotification('Bitte gib den Verifizierungscode ein.', 'error');
+        return;
+    }
+    
+    try {
+        // In a real implementation, verify the code with the server
+        // For now, we'll simulate a successful verification
+        if (verificationCode === '123456') {
+            showNotification('2FA erfolgreich aktiviert!', 'success');
+            
+            // Update user data
+            if (currentUserState.userData) {
+                currentUserState.userData.twoFactorEnabled = true;
+                await updateUserData(currentUserState.userData);
+            }
+            
+            // Hide QR section
+            const qrSection = document.getElementById('qr-code-section');
+            if (qrSection) {
+                qrSection.style.display = 'none';
+            }
+            
+            // Clear verification code
+            document.getElementById('verification-code').value = '';
+        } else {
+            showNotification('Ungültiger Verifizierungscode.', 'error');
+        }
+    } catch (error) {
+        console.error('Error verifying 2FA:', error);
+        showNotification('Fehler bei der 2FA-Verifizierung.', 'error');
+    }
+}
+
+async function disable2FA() {
+    console.log('🚫 Disabling 2FA');
+    
+    try {
+        // Update user data
+        if (currentUserState.userData) {
+            currentUserState.userData.twoFactorEnabled = false;
+            await updateUserData(currentUserState.userData);
+        }
+        
+        showNotification('2FA erfolgreich deaktiviert.', 'success');
+    } catch (error) {
+        console.error('Error disabling 2FA:', error);
+        showNotification('Fehler beim Deaktivieren der 2FA.', 'error');
+    }
+}
+
+async function handleLogoutAllDevices() {
+    console.log('🚪 Logging out all devices');
+    
+    try {
+        // In a real implementation, you would invalidate all sessions on the server
+        // For now, we'll just log out the current user
+        await firebase.auth().signOut();
+        showNotification('Erfolgreich von allen Geräten abgemeldet.', 'success');
+        closeAccountSettingsModal();
+    } catch (error) {
+        console.error('Error logging out all devices:', error);
+        showNotification('Fehler beim Abmelden von allen Geräten.', 'error');
+    }
+}
+
+function showDeleteConfirmModal() {
+    console.log('⚠️ Showing delete confirmation modal');
+    
+    const deleteConfirmModal = document.getElementById('delete-account-confirm-modal');
+    if (deleteConfirmModal) {
+        deleteConfirmModal.style.display = 'flex';
+        deleteConfirmModal.classList.add('modal-show');
+    }
+}
+
+function hideDeleteConfirmModal() {
+    console.log('❌ Hiding delete confirmation modal');
+    
+    const deleteConfirmModal = document.getElementById('delete-account-confirm-modal');
+    if (deleteConfirmModal) {
+        deleteConfirmModal.style.display = 'none';
+        deleteConfirmModal.classList.remove('modal-show');
+        // Clear password field
+        const passwordField = document.getElementById('delete-confirm-password');
+        if (passwordField) {
+            passwordField.value = '';
+        }
+    }
+}
+
+async function handleAccountDeletion() {
+    console.log('💥 Handling account deletion');
+    
+    const confirmPassword = document.getElementById('delete-confirm-password').value;
+    
+    if (!confirmPassword) {
+        showNotification('Bitte gib dein Passwort zur Bestätigung ein.', 'error');
+        return;
+    }
+    
+    try {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            throw new Error('Kein Benutzer angemeldet');
+        }
+        
+        // Re-authenticate user
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, confirmPassword);
+        await user.reauthenticateWithCredential(credential);
+        
+        // Delete user data from Firestore
+        if (currentUserState.userData && currentUserState.userData.uid) {
+            await firebase.firestore().collection('users').doc(currentUserState.userData.uid).delete();
+        }
+        
+        // Delete user account
+        await user.delete();
+        
+        showNotification('Konto erfolgreich gelöscht.', 'success');
+        
+        // Close modals and redirect
+        hideDeleteConfirmModal();
+        closeAccountSettingsModal();
+        
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        let errorMessage = 'Fehler beim Löschen des Kontos.';
+        
+        if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Das eingegebene Passwort ist falsch.';
+        } else if (error.code === 'auth/requires-recent-login') {
+            errorMessage = 'Bitte melde dich erneut an, um dein Konto zu löschen.';
+        }
+        
+        showNotification(errorMessage, 'error');
+    }
+}
+
+// Utility functions
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function formatDate(date) {
+    return date.toLocaleDateString('de-DE', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }

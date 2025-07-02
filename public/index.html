@@ -69,7 +69,7 @@
                         </div>
                         <div class="dropdown-item" id="profile-settings">
                             <span class="dropdown-icon">⚙️</span>
-                            Einstellungen
+                            Konto Settings
                         </div>
                         <div class="dropdown-item" id="stats-btn">
                             <span class="dropdown-icon">📊</span>
@@ -134,7 +134,7 @@
                     <span class="feature-tag">🎵 Music</span>
                 </div>
                 <div class="play-overlay">
-                    <button class="play-btn" onclick="window.location.href='SlotMachine1/slot1.html'">
+                    <button class="play-btn" onclick="window.location.href='/EmojiBonanza'">
                         <span class="play-icon">▶</span>
                         SPIELEN
                     </button>
@@ -155,21 +155,92 @@
         <div class="modal-content profile-modal-large">
             <span class="close" id="close-profile-modal">&times;</span>
             <div class="profile-modal-header">
-                <img id="profile-modal-img" class="profile-modal-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profilbild">
+                <div class="profile-img-container">
+                    <img id="profile-modal-img" class="profile-modal-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profilbild">
+                    <input type="text" id="edit-imglink" class="edit-imglink-input" placeholder="Profilbild-URL" style="display: none;">
+                </div>
                 <div class="profile-modal-info">
                     <div class="profile-modal-row">
-                        <span id="profile-modal-username" class="profile-modal-username"></span>
+                        <div class="username-container">
+                            <span id="profile-modal-username" class="profile-modal-username"></span>
+                            <input type="text" id="edit-username" class="edit-username-input" maxlength="20" style="display: none;">
+                        </div>
                         <button id="edit-profile-btn" class="edit-btn" title="Bearbeiten"><span>✏️</span></button>
+                        <button id="save-profile-btn" class="save-btn" title="Speichern" style="display: none;"><span>💾</span></button>
+                        <button id="cancel-edit-btn" class="cancel-btn" title="Abbrechen" style="display: none;"><span>❌</span></button>
                     </div>
                     <div class="profile-modal-row">
-                        <span id="profile-modal-country" class="profile-modal-country"></span>
+                        <div class="country-container">
+                            <span id="profile-modal-country" class="profile-modal-country"></span>
+                            <div class="custom-select-container" id="edit-country-container" style="display: none;">
+                                <div id="custom-country-select" class="custom-select">
+                                    <div class="select-selected">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                                        <span class="country-name">Deutschland</span>
+                                        <span class="select-arrow">▼</span>
+                                    </div>
+                                    <div class="select-items">
+                                        <div class="select-item" data-value="Germany">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                                            <span>Deutschland</span>
+                                        </div>
+                                        <div class="select-item" data-value="Austria">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/at.png" alt="Austria">
+                                            <span>Österreich</span>
+                                        </div>
+                                        <div class="select-item" data-value="Switzerland">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Switzerland">
+                                            <span>Schweiz</span>
+                                        </div>
+                                        <div class="select-item" data-value="USA">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="USA">
+                                            <span>USA</span>
+                                        </div>
+                                        <div class="select-item" data-value="UK">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="UK">
+                                            <span>Vereinigtes Königreich</span>
+                                        </div>
+                                        <div class="select-item" data-value="France">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="France">
+                                            <span>Frankreich</span>
+                                        </div>
+                                        <!-- BEISPIEL: Manuell hinzugefügtes Land (Notfall-Option) -->
+                                        <div class="select-item" data-value="Italy">
+                                            <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Italy">
+                                            <span>Italien</span>
+                                        </div>
+                                        <!-- 
+                                        ANLEITUNG: Um ein neues Land manuell hinzuzufügen, kopiere die Struktur oben:
+                                        -->
+                                        <div class="select-item" data-value="hss">
+                                            <img class="flag-icon" src="https://yt3.googleusercontent.com/ytc/AIdro_mlcFbTClzGQOdfNyVuIATIcMMxqWhVrj-smBRQDqjpIQ=s900-c-k-c0x00ffffff-no-rj" alt="LAND_CODE">
+                                            <span>HSS</span>
+                                        </div>
+                                        <!--
+                                        Beispiele:
+                                        - LAND_CODE: "Norway", FLAGGEN_CODE: "no", DEUTSCHER_NAME: "Norwegen"
+                                        - LAND_CODE: "Sweden", FLAGGEN_CODE: "se", DEUTSCHER_NAME: "Schweden"
+                                        - LAND_CODE: "Belgium", FLAGGEN_CODE: "be", DEUTSCHER_NAME: "Belgien"
+                                        
+                                        Flaggen-URL Format: https://flagcdn.com/w40/[LÄNDERCODE].png
+                                        Liste der Ländercodes: https://flagcdn.com/
+                                        -->
+                                        <!-- Additional countries will be added dynamically -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="edit-country" value="Germany">
+                            </div>
+                        </div>
                         <span id="profile-modal-level" class="profile-modal-level"></span>
                     </div>
                 </div>
             </div>
             <div class="profile-modal-body">
                 <label>Kommentar:</label>
-                <div id="profile-modal-comment" class="profile-modal-comment"></div>
+                <div class="comment-container">
+                    <div id="profile-modal-comment" class="profile-modal-comment"></div>
+                    <textarea id="edit-comment" class="edit-comment-input" maxlength="100" placeholder="Schreibe etwas über dich..." style="display: none;"></textarea>
+                </div>
                 <div class="profile-modal-row">
                     <div class="profile-stat">
                         <span class="profile-icon">💰</span>
@@ -183,99 +254,157 @@
                     </div>
                 </div>
             </div>
-            <div id="profile-modal-edit" class="profile-modal-edit" style="display:none;">
-                <label>Username:</label>
-                <input type="text" id="edit-username" maxlength="20">
-                <label>Kommentar:</label>
-                <textarea id="edit-comment" maxlength="100"></textarea>
-                <label>Profilbild-Link:</label>
-                <input type="text" id="edit-imglink">
-                <label>Land:</label>
-                <div class="custom-select-container">
-                    <div id="custom-country-select" class="custom-select">
-                        <div class="select-selected">
-                            <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
-                            <span class="country-name">Deutschland</span>
-                            <span class="select-arrow">▼</span>
-                        </div>
-                        <div class="select-items">
-                            <div class="select-item" data-value="Germany">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
-                                <span>Deutschland</span>
-                            </div>
-                            <div class="select-item" data-value="Austria">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/at.png" alt="Austria">
-                                <span>Österreich</span>
-                            </div>
-                            <div class="select-item" data-value="Switzerland">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Switzerland">
-                                <span>Schweiz</span>
-                            </div>
-                            <div class="select-item" data-value="France">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="France">
-                                <span>Frankreich</span>
-                            </div>
-                            <div class="select-item" data-value="Italy">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Italy">
-                                <span>Italien</span>
-                            </div>
-                            <div class="select-item" data-value="Spain">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/es.png" alt="Spain">
-                                <span>Spanien</span>
-                            </div>
-                            <div class="select-item" data-value="Poland">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/pl.png" alt="Poland">
-                                <span>Polen</span>
-                            </div>
-                            <div class="select-item" data-value="Netherlands">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/nl.png" alt="Netherlands">
-                                <span>Niederlande</span>
-                            </div>
-                            <div class="select-item" data-value="Turkey">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/tr.png" alt="Turkey">
-                                <span>Türkei</span>
-                            </div>
-                            <div class="select-item" data-value="UK">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="UK">
-                                <span>Vereinigtes Königreich</span>
-                            </div>
-                            <div class="select-item" data-value="USA">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="USA">
-                                <span>USA</span>
-                            </div>
-                            <div class="select-item" data-value="Canada">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/ca.png" alt="Canada">
-                                <span>Kanada</span>
-                            </div>
-                            <div class="select-item" data-value="Russia">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/ru.png" alt="Russia">
-                                <span>Russland</span>
-                            </div>
-                            <div class="select-item" data-value="Japan">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/jp.png" alt="Japan">
-                                <span>Japan</span>
-                            </div>
-                            <div class="select-item" data-value="China">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/cn.png" alt="China">
-                                <span>China</span>
-                            </div>
-                            <div class="select-item" data-value="Brazil">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/br.png" alt="Brazil">
-                                <span>Brasilien</span>
-                            </div>
-                            <div class="select-item" data-value="Australia">
-                                <img class="flag-icon" src="https://flagcdn.com/w40/au.png" alt="Australia">
-                                <span>Australien</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Hidden input for form compatibility -->
-                <input type="hidden" id="edit-country" value="Germany">
-                <button id="save-profile-btn">Speichern</button>
-            </div>
         </div>
     </div>
     <!-- Ende Profil-Popup -->
+
+    <!-- Account Settings Modal -->
+    <div id="account-settings-modal" class="modal" style="display:none;">
+        <div class="modal-content account-settings-modal">
+            <div class="modal-header">
+                <h2>
+                    <span class="modal-icon">⚙️</span>
+                    Konto Einstellungen
+                </h2>
+                <span class="close" id="close-account-settings-modal">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <!-- E-Mail Ändern -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <span class="settings-icon">📧</span>
+                        <h3>E-Mail Adresse</h3>
+                    </div>
+                    <div class="settings-content">
+                        <div class="current-value">
+                            <label>Aktuelle E-Mail:</label>
+                            <span id="current-email">user@example.com</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="email" id="new-email" placeholder="Neue E-Mail Adresse" class="settings-input">
+                            <button id="change-email-btn" class="settings-btn">E-Mail ändern</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passwort Ändern -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <span class="settings-icon">🔐</span>
+                        <h3>Passwort</h3>
+                    </div>
+                    <div class="settings-content">
+                        <div class="input-group">
+                            <input type="password" id="current-password" placeholder="Aktuelles Passwort" class="settings-input">
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="new-password" placeholder="Neues Passwort" class="settings-input">
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="confirm-password" placeholder="Neues Passwort bestätigen" class="settings-input">
+                        </div>
+                        <button id="change-password-btn" class="settings-btn">Passwort ändern</button>
+                    </div>
+                </div>
+
+                <!-- Zwei-Faktor-Authentifizierung -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <span class="settings-icon">🛡️</span>
+                        <h3>Zwei-Faktor-Authentifizierung</h3>
+                    </div>
+                    <div class="settings-content">
+                        <div class="toggle-setting">
+                            <div class="toggle-info">
+                                <strong>2FA aktivieren</strong>
+                                <p>Zusätzliche Sicherheit für dein Konto</p>
+                            </div>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="enable-2fa" class="toggle-checkbox">
+                                <label for="enable-2fa" class="toggle-label">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="qr-code-section" class="qr-section" style="display: none;">
+                            <p>Scanne den QR-Code mit deiner Authenticator App:</p>
+                            <div id="qr-code-display" class="qr-code-container">
+                                <!-- QR Code wird hier generiert -->
+                            </div>
+                            <input type="text" id="verification-code" placeholder="Verifizierungscode eingeben" class="settings-input">
+                            <button id="verify-2fa-btn" class="settings-btn">2FA bestätigen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konto Sicherheit -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <span class="settings-icon">🔒</span>
+                        <h3>Konto Sicherheit</h3>
+                    </div>
+                    <div class="settings-content">
+                        <div class="security-info">
+                            <div class="security-item">
+                                <span class="security-label">Letzte Anmeldung:</span>
+                                <span id="last-login">Heute, 14:30</span>
+                            </div>
+                            <div class="security-item">
+                                <span class="security-label">Konto erstellt:</span>
+                                <span id="account-created">15. Juni 2024</span>
+                            </div>
+                        </div>
+                        <button id="logout-all-devices-btn" class="settings-btn danger-btn">Alle Geräte abmelden</button>
+                    </div>
+                </div>
+
+                <!-- Konto löschen -->
+                <div class="settings-section danger-section">
+                    <div class="settings-section-header">
+                        <span class="settings-icon">⚠️</span>
+                        <h3>Gefahrenzone</h3>
+                    </div>
+                    <div class="settings-content">
+                        <div class="danger-warning">
+                            <p><strong>Achtung:</strong> Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                        </div>
+                        <button id="delete-account-btn" class="settings-btn danger-btn">Konto löschen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Ende Account Settings Modal -->
+
+    <!-- Bestätigungsdialog für Konto löschen -->
+    <div id="delete-account-confirm-modal" class="modal" style="display:none;">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>
+                    <span class="modal-icon">⚠️</span>
+                    Konto löschen bestätigen
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>Bist du sicher, dass du dein Konto löschen möchtest?</strong></p>
+                <p>Diese Aktion ist <strong>unwiderruflich</strong>. Alle deine Daten werden dauerhaft gelöscht:</p>
+                <ul>
+                    <li>Dein Profil und alle Einstellungen</li>
+                    <li>Dein Guthaben und Spielverlauf</li>
+                    <li>Alle deine Freundschaften</li>
+                    <li>Deine Statistiken und Erfolge</li>
+                </ul>
+                <div class="input-group">
+                    <input type="password" id="delete-confirm-password" placeholder="Passwort zur Bestätigung eingeben" class="settings-input">
+                </div>
+                <div class="confirm-buttons">
+                    <button id="confirm-delete-btn" class="settings-btn danger-btn">Konto endgültig löschen</button>
+                    <button id="cancel-delete-btn" class="settings-btn">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Ende Bestätigungsdialog -->
 </body>
 </html>
