@@ -84,6 +84,11 @@
                 </div>
             </div>
         </div>
+        <div class="header-actions">
+            <button class="news-icon" id="news-btn" title="Neuigkeiten & Updates">
+                <span>📰</span>
+            </button>
+        </div>
         <div class="header-balance"><span id="balance">1000</span></div>
     </header>
     <main>
@@ -406,5 +411,153 @@
         </div>
     </div>
     <!-- Ende Bestätigungsdialog -->
+
+    <!-- Neuigkeiten & Updates Modal -->
+    <div id="news-modal" class="modal" style="display:none;">
+        <div class="modal-content news-modal">
+            <div class="modal-header">
+                <h2>
+                    <span class="modal-icon">📰</span>
+                    Neuigkeiten & Updates
+                </h2>
+                <span class="close" id="close-news-modal">&times;</span>
+            </div>
+            
+            <div class="news-tabs">
+                <button class="tab-btn active" data-tab="news">
+                    <span class="tab-icon">📢</span>
+                    Neuigkeiten
+                </button>
+                <button class="tab-btn" data-tab="updates">
+                    <span class="tab-icon">🔄</span>
+                    Zukünftige Updates
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Neuigkeiten Tab -->
+                <div id="news-tab" class="tab-content active">
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-title">🎉 Willkommen bei MRAXOSlot!</div>
+                            <div class="news-date">2. Juli 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Erlebe das ultimative Slot-Erlebnis in deinem Browser! Sammle Münzen, spiele verschiedene Slots und steige in den Leveln auf.</p>
+                            <div class="news-tags">
+                                <span class="news-tag">🎰 Slots</span>
+                                <span class="news-tag">💰 Rewards</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-title">🎵 Neue Sounds hinzugefügt</div>
+                            <div class="news-date">1. Juli 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Genieße das verbesserte Spielerlebnis mit neuen Casino-Sounds und Hintergrundmusik!</p>
+                            <div class="news-tags">
+                                <span class="news-tag">🔊 Audio</span>
+                                <span class="news-tag">✨ Experience</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-title">🔒 Verbesserungen der Sicherheit</div>
+                            <div class="news-date">30. Juni 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Dein Konto ist jetzt noch sicherer mit verbesserter Authentifizierung und Datenschutz.</p>
+                            <div class="news-tags">
+                                <span class="news-tag">🛡️ Security</span>
+                                <span class="news-tag">🔐 Privacy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zukünftige Updates Tab -->
+                <div id="updates-tab" class="tab-content">
+                    <div class="news-item upcoming">
+                        <div class="news-header">
+                            <div class="news-title">🎮 Neue Slot-Maschinen</div>
+                            <div class="news-date">Geplant: August 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Freue dich auf 3 neue aufregende Slot-Spiele mit einzigartigen Themes und Bonus-Features!</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%"></div>
+                                <span class="progress-text">75% Fortschritt</span>
+                            </div>
+                            <div class="news-tags">
+                                <span class="news-tag upcoming-tag">🚀 Coming Soon</span>
+                                <span class="news-tag">🎰 Slots</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-item upcoming">
+                        <div class="news-header">
+                            <div class="news-title">👥 Freunde-System</div>
+                            <div class="news-date">Geplant: September 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Verbinde dich mit Freunden, sende Geschenke und vergleiche deine Erfolge!</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 45%"></div>
+                                <span class="progress-text">45% Fortschritt</span>
+                            </div>
+                            <div class="news-tags">
+                                <span class="news-tag upcoming-tag">📅 Planned</span>
+                                <span class="news-tag">👥 Social</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-item upcoming">
+                        <div class="news-header">
+                            <div class="news-title">🏆 Turnier-Modus</div>
+                            <div class="news-date">Geplant: Oktober 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Nimm an wöchentlichen Turnieren teil und kämpfe um exklusive Preise!</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 20%"></div>
+                                <span class="progress-text">20% Fortschritt</span>
+                            </div>
+                            <div class="news-tags">
+                                <span class="news-tag upcoming-tag">💭 Concept</span>
+                                <span class="news-tag">🏆 Competition</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="news-item upcoming">
+                        <div class="news-header">
+                            <div class="news-title">📱 Mobile WebApp</div>
+                            <div class="news-date">Geplant: Q4 2025</div>
+                        </div>
+                        <div class="news-content">
+                            <p>Spiele auch unterwegs mit der ClubRey Mobile WebApp für iOS und Android!</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 10%"></div>
+                                <span class="progress-text">10% Fortschritt</span>
+                            </div>
+                            <div class="news-tags">
+                                <span class="news-tag upcoming-tag">💡 Ideas</span>
+                                <span class="news-tag">📱 Mobile</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Ende Neuigkeiten & Updates Modal -->
+
 </body>
 </html>

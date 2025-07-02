@@ -75,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // GUEST WARNING
     setupGuestWarning();
     
+    // NEWS MODAL
+    setupNewsModal();
+    
     // TEST: Profil-Popup für Gäste verfügbar machen
     setupGuestProfileButton();
     
@@ -1638,18 +1641,82 @@ async function handleAccountDeletion() {
     }
 }
 
-// Utility functions
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+// News Modal Funktionalität
+function setupNewsModal() {
+    console.log('📰 Setup News Modal');
+    
+    const newsBtn = document.getElementById('news-btn');
+    const newsModal = document.getElementById('news-modal');
+    const closeNewsModal = document.getElementById('close-news-modal');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // News button click
+    if (newsBtn && newsModal) {
+        newsBtn.addEventListener('click', function() {
+            console.log('📰 News button clicked');
+            newsModal.style.display = 'flex';
+            // Add smooth entrance animation
+            setTimeout(() => {
+                newsModal.style.opacity = '1';
+            }, 10);
+        });
+        console.log('✅ News button active');
+    }
+    
+    // Close modal
+    if (closeNewsModal && newsModal) {
+        closeNewsModal.addEventListener('click', function() {
+            console.log('❌ Closing news modal');
+            newsModal.style.opacity = '0';
+            setTimeout(() => {
+                newsModal.style.display = 'none';
+            }, 300);
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (newsModal) {
+        newsModal.addEventListener('click', function(e) {
+            if (e.target === newsModal) {
+                console.log('❌ Closing news modal (outside click)');
+                newsModal.style.opacity = '0';
+                setTimeout(() => {
+                    newsModal.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+    
+    // Tab switching functionality
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            console.log('🔄 Switching to tab:', targetTab);
+            
+            // Remove active class from all tabs and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding content
+            const targetContent = document.getElementById(targetTab + '-tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+    
+    console.log('✅ News modal setup complete');
 }
 
-function formatDate(date) {
-    return date.toLocaleDateString('de-DE', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+// Force hide guest warning immediately (for when user logs in during delay)
+function forceHideGuestWarning() {
+    const guestWarning = document.getElementById('guest-warning');
+    if (guestWarning) {
+        guestWarning.style.display = 'none';
+        console.log('🚫 Guest warning force hidden');
+    }
 }

@@ -39,6 +39,42 @@ header {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Header Actions */
+.header-actions {
+  position: absolute;
+  top: 14px;
+  left: 2rem;
+  z-index: 100;
+  display: flex;
+  gap: 10px;
+}
+
+.news-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2.5px solid #9a8c98;
+  background: linear-gradient(135deg, #fff, #f8f9fa);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #22223b;
+}
+
+.news-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.news-icon:active {
+  transform: scale(0.95);
+}
+
 /* Profile Dropdown */
 .profile-dropdown {
   position: absolute;
@@ -1843,91 +1879,388 @@ main {
     flex-wrap: wrap;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .account-settings-modal {
-        width: 98%;
-        max-height: 95vh;
-        margin: 10px;
-    }
-    
-    .modal-header {
-        padding: 20px;
-    }
-    
-    .modal-header h2 {
-        font-size: 1.3rem;
-    }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
-    .settings-section {
-        padding: 20px;
-        margin-bottom: 15px;
-    }
-    
-    .settings-section-header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
-    
-    .settings-icon {
-        align-self: center;
-    }
-    
-    .input-group {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .settings-input {
-        min-width: unset;
-        margin-bottom: 10px;
-    }
-    
-    .settings-btn {
-        width: 100%;
-    }
-    
-    .toggle-setting {
-        flex-direction: column;
-        gap: 15px;
-        align-items: center;
-        text-align: center;
-    }
-    
-    .confirm-buttons {
-        flex-direction: column;
-    }
+/* ===========================================
+   NEWS & UPDATES MODAL STYLES
+   =========================================== */
+
+.news-modal {
+    max-width: 800px;
+    min-width: 600px;
+    max-height: 90vh;
+    width: 90%;
+    height: 85vh;
+    padding: 0;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 2px solid #4a90e2;
+    box-shadow: 
+        0 25px 50px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(74,144,226,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
-@media (max-width: 480px) {
-    .modal-header h2 {
+.modal[style*="flex"] .news-modal {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.news-modal .modal-header {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 50%, #2c5aa0 100%);
+    padding: 25px 30px;
+    color: white;
+    border-radius: 20px 20px 0 0;
+    position: relative;
+    box-shadow: 
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        0 2px 10px rgba(0,0,0,0.2);
+}
+
+.news-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.news-modal .modal-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.news-modal .close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: rgba(255,255,255,0.8);
+    background: rgba(0,0,0,0.2);
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.news-modal .close:hover {
+    color: white;
+    background: rgba(0,0,0,0.3);
+    transform: scale(1.1);
+}
+
+/* News Tabs */
+.news-tabs {
+    display: flex;
+    background: #1e1e3e;
+    border-bottom: 2px solid #2a2a4a;
+    margin: 0;
+    padding: 0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 18px 24px;
+    background: transparent;
+    border: none;
+    color: #a0a0c0;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+}
+
+.tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4a90e2;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(74,144,226,0.2), rgba(74,144,226,0.1));
+}
+
+.tab-btn.active::after {
+    transform: scaleX(1);
+}
+
+.tab-btn:hover:not(.active) {
+    color: #d0d0e0;
+    background: rgba(74,144,226,0.1);
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+}
+
+.news-modal .modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    padding: 25px 30px 40px 30px;
+    height: calc(85vh - 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    flex: 1;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Custom Scrollbar for Tab Content */
+.tab-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4a90e2, #357abd);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #357abd, #2c5aa0);
+    background-clip: content-box;
+}
+
+/* Firefox Scrollbar */
+.tab-content {
+    scrollbar-width: thin;
+    scrollbar-color: #4a90e2 rgba(255,255,255,0.1);
+}
+
+/* News Items */
+.news-item {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.news-item:last-child {
+    margin-bottom: 50px;
+}
+
+.news-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #4a90e2, #74b9ff, #4a90e2);
+    opacity: 0.7;
+}
+
+.news-item.upcoming::before {
+    background: linear-gradient(90deg, #ff7675, #fdcb6e, #ff7675);
+}
+
+.news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(74,144,226,0.2);
+    border-color: rgba(74,144,226,0.3);
+}
+
+.news-item.upcoming:hover {
+    box-shadow: 0 8px 25px rgba(255,118,117,0.2);
+    border-color: rgba(255,118,117,0.3);
+}
+
+.news-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+.news-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.news-date {
+    font-size: 0.9rem;
+    color: #a0a0c0;
+    white-space: nowrap;
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.news-content {
+    color: #d0d0e0;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.news-content p {
+    margin: 0 0 15px 0;
+}
+
+/* Progress Bar for Future Updates */
+.progress-bar {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 8px;
+    margin: 15px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff7675, #fdcb6e);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.progress-text {
+    font-size: 0.85rem;
+    color: #a0a0c0;
+    margin-top: 5px;
+    display: block;
+}
+
+/* News Tags */
+.news-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.news-tag {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.upcoming-tag {
+    background: linear-gradient(135deg, #ff7675, #e84a5f) !important;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .news-modal {
+        min-width: 95vw;
+        max-width: 95vw;
+        width: 95vw;
+        height: 90vh;
+        margin: 5vh auto;
+        max-height: 90vh;
+    }
+    
+    .news-modal .modal-header {
+        padding: 20px;
+    }
+    
+    .news-modal .modal-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .tab-content {
+        padding: 20px 20px 40px 20px;
+        height: calc(90vh - 160px);
+    }
+    
+    .tab-btn {
+        padding: 15px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .news-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .news-title {
         font-size: 1.1rem;
     }
     
-    .settings-section {
-        padding: 15px;
+    .news-tags {
+        gap: 6px;
     }
     
-    .modal-body {
-        padding: 15px;
+    .news-tag {
+        font-size: 0.75rem;
+        padding: 3px 8px;
     }
-}
-
-/* Force specific modals to be hidden initially */
-#account-settings-modal,
-#delete-account-confirm-modal {
-    display: none !important;
-}
-
-/* Only show when the modal-show class is added */
-#account-settings-modal.modal-show,
-#delete-account-confirm-modal.modal-show {
-    display: flex !important;
 }
 
 
