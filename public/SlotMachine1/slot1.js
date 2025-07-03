@@ -1259,6 +1259,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       saveBalance(balance); // Async save but don't await to not block UI
       updateBalance();
       
+      // Award XP for the win
+      if (window.levelSystem) {
+        window.levelSystem.awardSpinXP(bet, win);
+      }
+      
       // Bestimme Gewinn-Level für verschiedene Meldungen und Seitenanimationen
       // Erhöhte Schwellenwerte für seltenere große Gewinne
       let winMessage = '';
@@ -1298,6 +1303,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 500);
       }
     } else {
+      // Award base XP for spin (even when no win)
+      if (window.levelSystem) {
+        window.levelSystem.awardSpinXP(bet, 0);
+      }
+      
       resultEl.textContent = 'Leider kein Gewinn.';
       // Seitenanimation für Verlieren (nur wenn nicht AutoSpin)
       if (!autoSpinActive) {

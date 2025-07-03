@@ -26,18 +26,45 @@ body::before {
 }
 
 header {
-  max-height: 20px; /* reduced from 100px */
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 1.5rem 2rem;
   background: rgba(15, 15, 35, 0.95);
-  /* backdrop-filter: blur(20px); */ /* Removed to prevent stacking context */
   color: #ffffff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
   z-index: 10;
   isolation: auto; /* Prevent creating new stacking context */
+}
+
+/* Header Layout Styles */
+.header-left, .header-right, .header-center {
+  display: flex;
+  align-items: center;
+}
+
+.header-left {
+  justify-content: flex-start;
+}
+
+.header-center {
+  justify-content: center;
+}
+
+.header-right {
+  justify-content: flex-end;
+}
+
+.back {
+  margin-right: 10px;
+  color: #fff;
+  font-size: 1.5rem;
+  transition: transform 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
 }
 
 header .back {
@@ -64,25 +91,68 @@ header .back:hover {
   background: rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(-3px);
+  color: #f4d03f;
+}
+
+header .level-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 20px;
+}
+
+header .level-number {
+  background: linear-gradient(135deg, #bb4e75 0%, #ff8a00 100%);
+  color: white;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 16px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+header .xp-progress-bar {
+  width: 80px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+header .xp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+  border-radius: 3px;
+  transition: width 0.5s ease;
 }
 
 .balance {
-  padding: 8px 8px;
-  border-radius: 12px;
-  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 15px;
+  font-weight: 700;
   background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
   color: #1a1a1a;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 8px rgba(244, 208, 63, 0.25);
+  box-shadow: 0 4px 12px rgba(244, 208, 63, 0.35);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  transform: scale(1.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.balance:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 15px rgba(244, 208, 63, 0.45);
 }
 
 .balance::before {
   content: "🪙";
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1;
 }
 main {

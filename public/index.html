@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Browsergame</title>
     <link rel="stylesheet" href="style.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -14,6 +15,12 @@
     
     <!-- Global Balance Manager -->
     <script src="balanceManager.js"></script>
+    
+    <!-- Level System -->
+    <script src="levelSystem.js"></script>
+    
+    <!-- Level-Anzeige im Header -->
+    <script src="level-display.js"></script>
     
     <!-- Einfache Version ohne Firebase für Test -->
     <script defer src="main.js"></script>
@@ -35,7 +42,20 @@
             </div>
         </div>
         
-        <div class="profile">
+        <!-- Levelanzeige mit integriertem Profilbild -->
+        <div class="level-header">
+            <div class="level-info">
+                <div class="level-row">
+                    <span class="level-number" id="header-level-number">1</span>
+                    <span class="xp-text" id="header-xp-text">25 XP / 20.000 XP</span>
+                </div>
+                <div class="xp-progress-container">
+                    <div class="xp-progress-bar">
+                        <div class="xp-progress-fill" id="header-xp-bar" style="width: 10%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="profile">
             <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" id="profile-img" />
             <div class="profile-dropdown" id="profile-dropdown">
                 <div class="dropdown-content">
@@ -55,6 +75,37 @@
                             Gastmodus
                         </div>
                     </div>
+                    
+                    <!-- Für eingeloggte Benutzer -->
+                    <div class="user-menu" style="display: none;">
+                        <div class="user-info">
+                            <span class="username" id="username-display">Benutzer</span>
+                            <span class="user-email" id="email-display">user@example.com</span>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" id="public-profile-btn">
+                            <span class="dropdown-icon">👁️</span>
+                            Öffentliches Profil
+                        </div>
+                        <div class="dropdown-item" id="profile-settings">
+                            <span class="dropdown-icon">⚙️</span>
+                            Konto Settings
+                        </div>
+                        <div class="dropdown-item" id="stats-btn">
+                            <span class="dropdown-icon">📊</span>
+                            Statistiken
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" id="logout-btn">
+                            <span class="dropdown-icon">🚪</span>
+                            Abmelden
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- Ende Levelanzeige -->
                     
                     <!-- Für eingeloggte Benutzer -->
                     <div class="user-menu" style="display: none;">
@@ -158,7 +209,7 @@
     <!-- Profil-Popup -->
     <div id="profile-modal" class="modal" style="display:none;">
         <div class="modal-content profile-modal-large">
-            <span class="close" id="close-profile-modal">&times;</span>
+            <span class="close" id="close-profile-modal"><i class="fa-solid fa-xmark"></i></span>
             <div class="profile-modal-header">
                 <div class="profile-img-container">
                     <img id="profile-modal-img" class="profile-modal-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profilbild">
@@ -271,7 +322,7 @@
                     <span class="modal-icon">⚙️</span>
                     Konto Einstellungen
                 </h2>
-                <span class="close" id="close-account-settings-modal">&times;</span>
+                <span class="close" id="close-account-settings-modal"><i class="fa-solid fa-xmark"></i></span>
             </div>
             
             <div class="modal-body">
@@ -558,6 +609,75 @@
         </div>
     </div>
     <!-- Ende Neuigkeiten & Updates Modal -->
+
+    <!-- Hintergrundmusik -->
+    <audio id="background-music" loop preload="auto">
+        <source src="data/sounds/Main/swing-brass-Main.mp3" type="audio/mpeg">
+        Ihr Browser unterstützt das Audio-Element nicht.
+    </audio>
+
+    <script>
+        // Hintergrundmusik automatisch starten
+        document.addEventListener('DOMContentLoaded', function() {
+            const backgroundMusic = document.getElementById('background-music');
+            backgroundMusic.volume = 0.3; // Lautstärke auf 30% setzen
+            
+            // Gespeicherte Position aus localStorage laden
+            const savedTime = localStorage.getItem('musicPosition');
+            if (savedTime) {
+                backgroundMusic.currentTime = parseFloat(savedTime);
+            }
+            
+            // Versuche Musik zu starten
+            const playMusic = () => {
+                backgroundMusic.play().catch(error => {
+                    console.log('Autoplay wurde blockiert, warte auf Benutzerinteraktion:', error);
+                    // Füge Event-Listener für erste Benutzerinteraktion hinzu
+                    document.addEventListener('click', function startMusicOnClick() {
+                        backgroundMusic.play();
+                        document.removeEventListener('click', startMusicOnClick);
+                    }, { once: true });
+                });
+            };
+            
+            playMusic();
+            
+            // Musik-Position regelmäßig speichern (alle 5 Sekunden)
+            setInterval(() => {
+                if (!backgroundMusic.paused) {
+                    localStorage.setItem('musicPosition', backgroundMusic.currentTime.toString());
+                }
+            }, 5000);
+            
+            // Musik pausieren beim Verlassen der Seite
+            window.addEventListener('beforeunload', function() {
+                if (!backgroundMusic.paused) {
+                    localStorage.setItem('musicPosition', backgroundMusic.currentTime.toString());
+                    backgroundMusic.pause();
+                }
+            });
+            
+            // Musik pausieren wenn Tab nicht sichtbar ist
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    if (!backgroundMusic.paused) {
+                        localStorage.setItem('musicPosition', backgroundMusic.currentTime.toString());
+                        backgroundMusic.pause();
+                    }
+                } else {
+                    // Tab wieder sichtbar - Musik fortsetzen
+                    const savedTime = localStorage.getItem('musicPosition');
+                    if (savedTime) {
+                        backgroundMusic.currentTime = parseFloat(savedTime);
+                    }
+                    backgroundMusic.play().catch(error => {
+                        console.log('Musik konnte nicht automatisch fortgesetzt werden:', error);
+                    });
+                }
+            });
+        });
+    </script>
+
 
 </body>
 </html>

@@ -9,6 +9,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="SlotMachine1/slot1.css">
+    <!-- Component Styles for Level Display and Profile -->
+    <link rel="stylesheet" href="../components/component-styles.css">
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="../firebase.js"></script>
+    <!-- System Scripts -->
+    <script src="../balanceManager.js"></script>
+    <script src="../levelSystem.js"></script>
+    <script src="../level-display.js"></script>
     <script defer src="SlotMachine1/slot1.js"></script>
     <meta name="theme-color" content="#1a1a2e">
 </head>
@@ -31,8 +42,92 @@
     <!-- Hauptinhalt (zunächst versteckt) -->
     <div id="main-content" class="main-content" style="display: none;">
         <header>
-            <div class="balance"><span id="balance">0</span></div>
-            <a href="**" class="back"><i class="fa-solid fa-angle-left"></i></a>
+            <div class="header-left">
+                <a href="/Start" class="back"><i class="fa-solid fa-angle-left"></i></a>
+            </div>
+            <div class="header-center">
+                <div class="balance"><span id="balance">0</span></div>
+            </div>
+            <div class="header-right">
+                <!-- Verbesserte Levelanzeige mit integriertem Profilbild -->
+                <div class="level-header">
+                    <div class="level-info">
+                        <div class="level-status">
+                            <div class="level-badge">
+                                <div class="level-badge-inner">
+                                    <span class="level-number" id="header-level-number">1</span>
+                                </div>
+                                <span class="level-label">LEVEL</span>
+                            </div>
+                            <div class="level-details">
+                                <div class="level-title">Premium Spieler</div>
+                                <span class="xp-text" id="header-xp-text">25 XP / 20.000 XP</span>
+                            </div>
+                        </div>
+                        <div class="xp-progress-container">
+                            <div class="xp-progress-bar">
+                                <div class="xp-progress-fill" id="header-xp-bar" style="width: 10%"></div>
+                                <div class="xp-milestones">
+                                    <div class="xp-milestone" style="left: 25%"></div>
+                                    <div class="xp-milestone" style="left: 50%"></div>
+                                    <div class="xp-milestone" style="left: 75%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile">
+                        <div class="profile-level-indicator"></div>
+                        <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" id="profile-img" />
+                        <div class="profile-dropdown" id="profile-dropdown">
+                            <div class="dropdown-content">
+                                <!-- Für nicht eingeloggte Benutzer -->
+                                <div class="guest-menu">
+                                    <div class="dropdown-item" id="login-btn">
+                                        <span class="dropdown-icon">🔑</span>
+                                        Anmelden
+                                    </div>
+                                    <div class="dropdown-item" id="register-btn">
+                                        <span class="dropdown-icon">📝</span>
+                                        Registrieren
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-item guest-info">
+                                        <span class="dropdown-icon">👤</span>
+                                        Gastmodus
+                                    </div>
+                                </div>
+                                
+                                <!-- Für eingeloggte Benutzer -->
+                                <div class="user-menu" style="display: none;">
+                                    <div class="user-info">
+                                        <span class="username" id="username-display">Benutzer</span>
+                                        <span class="user-email" id="email-display">user@example.com</span>
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-item" id="public-profile-btn">
+                                        <span class="dropdown-icon">👁️</span>
+                                        Öffentliches Profil
+                                    </div>
+                                    <div class="dropdown-item" id="profile-settings">
+                                        <span class="dropdown-icon">⚙️</span>
+                                        Konto Settings
+                                    </div>
+                                    <div class="dropdown-item" id="stats-btn">
+                                        <span class="dropdown-icon">📊</span>
+                                        Statistiken
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-item" id="logout-btn">
+                                        <span class="dropdown-icon">🚪</span>
+                                        Abmelden
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Ende Levelanzeige -->
+            </div>
         </header>
         <main>
             <div id="emoji-waterfall"></div>
@@ -75,5 +170,61 @@
             <div class="win-amount" id="win-amount">0 €</div>
         </div>
     </div>
+
+    <!-- Load external profile and account settings components -->
+    <div id="profile-settings-container"></div>
+
+    <script>
+        // Load external components when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load profile and account settings components
+            fetch('../components/profile-settings.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('profile-settings-container').innerHTML = html;
+                    
+                    // Execute the scripts that were loaded as part of the HTML
+                    const scriptTags = document.getElementById('profile-settings-container').querySelectorAll('script');
+                    scriptTags.forEach(scriptTag => {
+                        const newScriptTag = document.createElement('script');
+                        if (scriptTag.src) {
+                            newScriptTag.src = scriptTag.src;
+                        } else {
+                            newScriptTag.textContent = scriptTag.textContent;
+                        }
+                        document.body.appendChild(newScriptTag);
+                        scriptTag.remove();
+                    });
+                    
+                    // Enhanced profile dropdown toggle
+                    const profileImg = document.getElementById('profile-img');
+                    const dropdown = document.getElementById('profile-dropdown');
+                    
+                    if (profileImg && dropdown) {
+                        profileImg.addEventListener('click', function() {
+                            dropdown.classList.toggle('show');
+                            if (dropdown.style.display === 'block') {
+                                dropdown.style.display = 'none';
+                                setTimeout(() => dropdown.classList.remove('show'), 10);
+                            } else {
+                                dropdown.style.display = 'block';
+                                setTimeout(() => dropdown.classList.add('show'), 10);
+                            }
+                        });
+                        
+                        // Close dropdown when clicking outside
+                        document.addEventListener('click', function(e) {
+                            if (!profileImg.contains(e.target) && !dropdown.contains(e.target) && dropdown.style.display === 'block') {
+                                dropdown.classList.remove('show');
+                                setTimeout(() => dropdown.style.display = 'none', 300);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading profile settings components:', error);
+                });
+        });
+    </script>
 </body>
 </html>

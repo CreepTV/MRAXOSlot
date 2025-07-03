@@ -1,0 +1,419 @@
+<!-- Profile and Account Settings Components -->
+<!-- This file contains reusable UI components for profile and account settings -->
+
+<!-- Profil-Popup -->
+<div id="profile-modal" class="modal" style="display:none;">
+    <div class="modal-content profile-modal-large">
+        <span class="close" id="close-profile-modal"><i class="fa-solid fa-xmark"></i></span>
+        <div class="profile-modal-header">
+            <div class="profile-img-container">
+                <img id="profile-modal-img" class="profile-modal-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profilbild">
+                <input type="text" id="edit-imglink" class="edit-imglink-input" placeholder="Profilbild-URL" style="display: none;">
+            </div>
+            <div class="profile-modal-info">
+                <div class="profile-modal-row">
+                    <div class="username-container">
+                        <span id="profile-modal-username" class="profile-modal-username"></span>
+                        <input type="text" id="edit-username" class="edit-username-input" maxlength="20" style="display: none;">
+                    </div>
+                    <button id="edit-profile-btn" class="edit-btn" title="Bearbeiten"><span>✏️</span></button>
+                    <button id="save-profile-btn" class="save-btn" title="Speichern" style="display: none;"><span>💾</span></button>
+                    <button id="cancel-edit-btn" class="cancel-btn" title="Abbrechen" style="display: none;"><span>❌</span></button>
+                </div>
+                <div class="profile-modal-row">
+                    <div class="country-container">
+                        <span id="profile-modal-country" class="profile-modal-country"></span>
+                        <div class="custom-select-container" id="edit-country-container" style="display: none;">
+                            <div id="custom-country-select" class="custom-select">
+                                <div class="select-selected">
+                                    <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                                    <span class="country-name">Deutschland</span>
+                                    <span class="select-arrow">▼</span>
+                                </div>
+                                <div class="select-items">
+                                    <div class="select-item" data-value="Germany">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Germany">
+                                        <span>Deutschland</span>
+                                    </div>
+                                    <div class="select-item" data-value="Austria">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/at.png" alt="Austria">
+                                        <span>Österreich</span>
+                                    </div>
+                                    <div class="select-item" data-value="Switzerland">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Switzerland">
+                                        <span>Schweiz</span>
+                                    </div>
+                                    <div class="select-item" data-value="USA">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="USA">
+                                        <span>USA</span>
+                                    </div>
+                                    <div class="select-item" data-value="UK">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="UK">
+                                        <span>Vereinigtes Königreich</span>
+                                    </div>
+                                    <div class="select-item" data-value="France">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="France">
+                                        <span>Frankreich</span>
+                                    </div>
+                                    <div class="select-item" data-value="Italy">
+                                        <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Italy">
+                                        <span>Italien</span>
+                                    </div>
+                                    <div class="select-item" data-value="hss">
+                                        <img class="flag-icon" src="https://yt3.googleusercontent.com/ytc/AIdro_mlcFbTClzGQOdfNyVuIATIcMMxqWhVrj-smBRQDqjpIQ=s900-c-k-c0x00ffffff-no-rj" alt="LAND_CODE">
+                                        <span>HSS</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="edit-country" value="Germany">
+                        </div>
+                    </div>
+                    <span id="profile-modal-level" class="profile-modal-level"></span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-modal-body">
+            <label>Kommentar:</label>
+            <div class="comment-container">
+                <div id="profile-modal-comment" class="profile-modal-comment"></div>
+                <textarea id="edit-comment" class="edit-comment-input" maxlength="100" placeholder="Schreibe etwas über dich..." style="display: none;"></textarea>
+            </div>
+            <div class="profile-modal-row">
+                <div class="profile-stat">
+                    <span class="profile-icon">💰</span>
+                    <div class="profile-stat-value" id="profile-modal-balance">0</div>
+                    <div class="profile-stat-label">Guthaben</div>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-icon">👥</span>
+                    <div class="profile-stat-value" id="profile-modal-friends">0</div>
+                    <div class="profile-stat-label">Freunde</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Settings Modal -->
+<div id="account-settings-modal" class="modal" style="display:none;">
+    <div class="modal-content account-settings-modal">
+        <div class="modal-header">
+            <h2>
+                <span class="modal-icon">⚙️</span>
+                Konto Einstellungen
+            </h2>
+            <span class="close" id="close-account-settings-modal"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        
+        <div class="modal-body">
+            <!-- E-Mail Ändern -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <span class="settings-icon">📧</span>
+                    <h3>E-Mail Adresse</h3>
+                </div>
+                <div class="settings-content">
+                    <div class="current-value">
+                        <label>Aktuelle E-Mail:</label>
+                        <span id="current-email">user@example.com</span>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="new-email" placeholder="Neue E-Mail Adresse" class="settings-input">
+                        <button id="change-email-btn" class="settings-btn">E-Mail ändern</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passwort Ändern -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <span class="settings-icon">🔐</span>
+                    <h3>Passwort</h3>
+                </div>
+                <div class="settings-content">
+                    <div class="input-group">
+                        <input type="password" id="current-password" placeholder="Aktuelles Passwort" class="settings-input">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="new-password" placeholder="Neues Passwort" class="settings-input">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="confirm-password" placeholder="Neues Passwort bestätigen" class="settings-input">
+                    </div>
+                    <button id="change-password-btn" class="settings-btn">Passwort ändern</button>
+                </div>
+            </div>
+
+            <!-- Zwei-Faktor-Authentifizierung -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <span class="settings-icon">🛡️</span>
+                    <h3>Zwei-Faktor-Authentifizierung</h3>
+                </div>
+                <div class="settings-content">
+                    <div class="toggle-setting">
+                        <div class="toggle-info">
+                            <strong>2FA aktivieren</strong>
+                            <p>Zusätzliche Sicherheit für dein Konto</p>
+                        </div>
+                        <div class="toggle-container">
+                            <input type="checkbox" id="enable-2fa" class="toggle-checkbox">
+                            <label for="enable-2fa" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="qr-code-section" class="qr-section" style="display: none;">
+                        <p>Scanne den QR-Code mit deiner Authenticator App:</p>
+                        <div id="qr-code-display" class="qr-code-container">
+                            <!-- QR Code wird hier generiert -->
+                        </div>
+                        <input type="text" id="verification-code" placeholder="Verifizierungscode eingeben" class="settings-input">
+                        <button id="verify-2fa-btn" class="settings-btn">2FA bestätigen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Konto Sicherheit -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <span class="settings-icon">🔒</span>
+                    <h3>Konto Sicherheit</h3>
+                </div>
+                <div class="settings-content">
+                    <div class="security-info">
+                        <div class="security-item">
+                            <span class="security-label">Letzte Anmeldung:</span>
+                            <span id="last-login">Heute, 14:30</span>
+                        </div>
+                        <div class="security-item">
+                            <span class="security-label">Konto erstellt:</span>
+                            <span id="account-created">15. Juni 2024</span>
+                        </div>
+                    </div>
+                    <button id="logout-all-devices-btn" class="settings-btn danger-btn">Alle Geräte abmelden</button>
+                </div>
+            </div>
+
+            <!-- Konto löschen -->
+            <div class="settings-section danger-section">
+                <div class="settings-section-header">
+                    <span class="settings-icon">⚠️</span>
+                    <h3>Gefahrenzone</h3>
+                </div>
+                <div class="settings-content">
+                    <div class="danger-warning">
+                        <p><strong>Achtung:</strong> Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                    </div>
+                    <button id="delete-account-btn" class="settings-btn danger-btn">Konto löschen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bestätigungsdialog für Konto löschen -->
+<div id="delete-account-confirm-modal" class="modal" style="display:none;">
+    <div class="modal-content confirm-modal">
+        <div class="modal-header">
+            <h2>
+                <span class="modal-icon">⚠️</span>
+                Konto löschen bestätigen
+            </h2>
+        </div>
+        <div class="modal-body">
+            <p><strong>Bist du sicher, dass du dein Konto löschen möchtest?</strong></p>
+            <p>Diese Aktion ist <strong>unwiderruflich</strong>. Alle deine Daten werden dauerhaft gelöscht:</p>
+            <ul>
+                <li>Dein Profil und alle Einstellungen</li>
+                <li>Dein Guthaben und Spielverlauf</li>
+                <li>Alle deine Freundschaften</li>
+                <li>Deine Statistiken und Erfolge</li>
+            </ul>
+            <div class="input-group">
+                <input type="password" id="delete-confirm-password" placeholder="Passwort zur Bestätigung eingeben" class="settings-input">
+            </div>
+            <div class="confirm-buttons">
+                <button id="confirm-delete-btn" class="settings-btn danger-btn">Konto endgültig löschen</button>
+                <button id="cancel-delete-btn" class="settings-btn">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script to load profile and account components -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Init profile dropdown functionality
+    if(document.getElementById('profile-img')) {
+        document.getElementById('profile-img').addEventListener('click', function() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const profileImg = document.getElementById('profile-img');
+            if (dropdown && profileImg && !profileImg.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // Profile modal events
+    if(document.getElementById('public-profile-btn')) {
+        document.getElementById('public-profile-btn').addEventListener('click', function() {
+            document.getElementById('profile-modal').style.display = 'block';
+            
+            // Load user profile data if possible
+            if (window.firebase && window.firebase.auth().currentUser) {
+                const user = window.firebase.auth().currentUser;
+                const db = window.firebase.firestore();
+                
+                db.collection('users').doc(user.uid).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            
+                            // Update profile modal with user data
+                            document.getElementById('profile-modal-username').textContent = userData.username || 'Benutzer';
+                            document.getElementById('profile-modal-comment').textContent = userData.comment || '';
+                            document.getElementById('profile-modal-balance').textContent = userData.balance || 0;
+                            document.getElementById('profile-modal-level').textContent = `Level ${userData.level || 1}`;
+                            
+                            if (userData.profilePic) {
+                                document.getElementById('profile-modal-img').src = userData.profilePic;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fehler beim Laden des Profils:', error);
+                    });
+            }
+        });
+    }
+
+    if(document.getElementById('close-profile-modal')) {
+        document.getElementById('close-profile-modal').addEventListener('click', function() {
+            document.getElementById('profile-modal').style.display = 'none';
+        });
+    }
+
+    // Account settings events
+    if(document.getElementById('profile-settings')) {
+        document.getElementById('profile-settings').addEventListener('click', function() {
+            document.getElementById('account-settings-modal').style.display = 'block';
+            
+            // Load current user email
+            if (window.firebase && window.firebase.auth().currentUser) {
+                const user = window.firebase.auth().currentUser;
+                document.getElementById('current-email').textContent = user.email;
+                
+                // Load account creation date and last login
+                const db = window.firebase.firestore();
+                db.collection('users').doc(user.uid).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            
+                            if (userData.createdAt) {
+                                const createdDate = new Date(userData.createdAt.toDate());
+                                document.getElementById('account-created').textContent = 
+                                    createdDate.toLocaleDateString('de-DE', {day: 'numeric', month: 'long', year: 'numeric'});
+                            }
+                            
+                            if (userData.lastLogin) {
+                                const lastLogin = new Date(userData.lastLogin.toDate());
+                                document.getElementById('last-login').textContent = 
+                                    lastLogin.toLocaleDateString('de-DE', {day: 'numeric', month: 'long'}) + ', ' + 
+                                    lastLogin.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fehler beim Laden der Kontodaten:', error);
+                    });
+            }
+        });
+    }
+
+    if(document.getElementById('close-account-settings-modal')) {
+        document.getElementById('close-account-settings-modal').addEventListener('click', function() {
+            document.getElementById('account-settings-modal').style.display = 'none';
+        });
+    }
+
+    // Delete account modal events
+    if(document.getElementById('delete-account-btn')) {
+        document.getElementById('delete-account-btn').addEventListener('click', function() {
+            document.getElementById('delete-account-confirm-modal').style.display = 'block';
+        });
+    }
+
+    if(document.getElementById('cancel-delete-btn')) {
+        document.getElementById('cancel-delete-btn').addEventListener('click', function() {
+            document.getElementById('delete-account-confirm-modal').style.display = 'none';
+        });
+    }
+
+    // Password change functionality
+    if(document.getElementById('change-password-btn')) {
+        document.getElementById('change-password-btn').addEventListener('click', function() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Bitte alle Passwortfelder ausfüllen');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('Die neuen Passwörter stimmen nicht überein');
+                return;
+            }
+            
+            if (window.firebase && window.firebase.auth().currentUser) {
+                const user = window.firebase.auth().currentUser;
+                const credential = window.firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+                
+                // Reauthenticate and change password
+                user.reauthenticateWithCredential(credential).then(() => {
+                    user.updatePassword(newPassword).then(() => {
+                        alert('Passwort erfolgreich geändert');
+                        document.getElementById('current-password').value = '';
+                        document.getElementById('new-password').value = '';
+                        document.getElementById('confirm-password').value = '';
+                    }).catch(error => {
+                        console.error('Fehler beim Ändern des Passworts:', error);
+                        alert('Fehler: ' + error.message);
+                    });
+                }).catch(error => {
+                    console.error('Authentifizierungsfehler:', error);
+                    alert('Das aktuelle Passwort ist nicht korrekt');
+                });
+            }
+        });
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function(e) {
+        const profileModal = document.getElementById('profile-modal');
+        const accountSettingsModal = document.getElementById('account-settings-modal');
+        const deleteConfirmModal = document.getElementById('delete-account-confirm-modal');
+        
+        if (e.target === profileModal) {
+            profileModal.style.display = 'none';
+        }
+        
+        if (e.target === accountSettingsModal) {
+            accountSettingsModal.style.display = 'none';
+        }
+        
+        if (e.target === deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'none';
+        }
+    });
+});
+</script>
