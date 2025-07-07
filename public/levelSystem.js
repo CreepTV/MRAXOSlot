@@ -14,8 +14,8 @@ class LevelSystem {
         // Level configuration
         this.levelConfig = {
             maxLevel: 50,
-            baseXPRequired: 100,
-            xpMultiplier: 1.5,
+            baseXPRequired: 100,  // XP für Level 2, jedes weitere Level benötigt doppelt so viel
+            // xpMultiplier wird nicht mehr verwendet, da wir immer mit 2 multiplizieren
             slotUnlocks: {
                 1: ['SlotMachine1'], // Starting slot (always unlocked)
                 3: ['SlotMachine2'],
@@ -33,17 +33,17 @@ class LevelSystem {
             }
         };
         
-        // XP rewards for different actions (improved balance)
+        // XP rewards for different actions (adjusted for doubled XP requirements)
         this.xpRewards = {
-            spin: 2,           // Base XP per spin (increased from 1)
-            smallWin: 3,       // Win less than 5x bet
-            mediumWin: 8,      // Win 5-20x bet
-            bigWin: 15,        // Win 20-100x bet
-            jackpot: 30,       // Win 100x+ bet
-            dailyBonus: 100,   // Daily login bonus (increased)
-            achievement: 150,  // Special achievements
-            firstLogin: 50,    // First time login bonus
-            comeback: 25       // Comeback bonus after 3+ days
+            spin: 5,           // Base XP per spin (increased for new system)
+            smallWin: 10,      // Win less than 5x bet
+            mediumWin: 20,     // Win 5-20x bet
+            bigWin: 40,        // Win 20-100x bet
+            jackpot: 80,       // Win 100x+ bet
+            dailyBonus: 200,   // Daily login bonus
+            achievement: 300,  // Special achievements
+            firstLogin: 100,   // First time login bonus
+            comeback: 50       // Comeback bonus after 3+ days
         };
         
         // Initialize the system
@@ -74,6 +74,12 @@ class LevelSystem {
         }
         
         console.log('✅ Level System initialized');
+        
+        // Debug XP status after initialization
+        this.debugXPStatus();
+        
+        // Zeige XP-Anforderungen für Level-Aufstiege
+        this.showXPRequirements();
     }
     
     async waitForFirebase() {
@@ -239,7 +245,6 @@ class LevelSystem {
         // Check for level up
         let leveledUp = false;
         while (this.currentLevel < this.levelConfig.maxLevel) {
-            const xpNeededForNext = this.getXPRequiredForLevel(this.currentLevel + 1);
             const currentLevelProgress = this.getCurrentLevelProgress();
             
             if (currentLevelProgress.current >= currentLevelProgress.needed) {
@@ -264,6 +269,15 @@ class LevelSystem {
         // Update UI
         this.updateUI();
         
+        // Debug XP status after awarding
+        this.debugXPStatus();
+        
+        // Dispatch an event that XP has been awarded
+        const xpEvent = new CustomEvent('xp-changed', { 
+            detail: { amount, oldLevel, newLevel: this.currentLevel, reason }
+        });
+        window.dispatchEvent(xpEvent);
+        
         return true;
     }
     
@@ -275,29 +289,62 @@ class LevelSystem {
         let xpAmount = this.xpRewards.spin; // Base spin XP
         
         // Bet amount bonus (higher bets = more XP)
-        const betBonus = Math.floor(betAmount / 100); // 1 extra XP per 100 coins bet
-        xpAmount += Math.min(betBonus, 5); // Cap at 5 bonus XP
+        const betBonus = Math.floor(betAmount / 25); // 1 extra XP per 25 coins bet (improved for new XP system)
+        xpAmount += Math.min(betBonus, 20); // Cap at 20 bonus XP (doubled for new XP system)
         
         if (winAmount > 0) {
             const winMultiplier = winAmount / betAmount;
             
             if (winMultiplier >= 100) {
                 xpAmount += this.xpRewards.jackpot;
+                console.log(`🎯 JACKPOT XP: +${this.xpRewards.jackpot}`);
             } else if (winMultiplier >= 20) {
                 xpAmount += this.xpRewards.bigWin;
+                console.log(`🎯 BIG WIN XP: +${this.xpRewards.bigWin}`);
             } else if (winMultiplier >= 5) {
                 xpAmount += this.xpRewards.mediumWin;
+                console.log(`🎯 MEDIUM WIN XP: +${this.xpRewards.mediumWin}`);
             } else {
                 xpAmount += this.xpRewards.smallWin;
+                console.log(`🎯 SMALL WIN XP: +${this.xpRewards.smallWin}`);
             }
-            
-            // Bonus XP for very large wins
+
+            // Bonus XP for absolute win amounts
             if (winAmount >= 10000) {
-                xpAmount += 10; // Bonus for huge wins
+                const hugeWinBonus = 40; // Doubled for new XP system
+                xpAmount += hugeWinBonus;
+                console.log(`🎯 HUGE WIN BONUS XP: +${hugeWinBonus}`);
+            } else if (winAmount >= 5000) {
+                const largeWinBonus = 30; // Doubled for new XP system
+                xpAmount += largeWinBonus;
+                console.log(`🎯 LARGE WIN BONUS XP: +${largeWinBonus}`);
+            } else if (winAmount >= 2000) {
+                const goodWinBonus = 20; // Doubled for new XP system
+                xpAmount += goodWinBonus;
+                console.log(`🎯 GOOD WIN BONUS XP: +${goodWinBonus}`);
             }
         }
         
-        return await this.awardXP(xpAmount, `spin_result (bet: ${betAmount}, win: ${winAmount})`);
+        console.log(`🎯 Total XP for this spin: +${xpAmount} (bet: ${betAmount}, win: ${winAmount})`);
+        
+        // Debug vor der Vergabe
+        console.log('🔍 XP vor dem Spin:', {
+            currentXP: this.currentXP,
+            level: this.currentLevel
+        });
+        
+        // XP vergeben
+        const result = await this.awardXP(xpAmount, `spin_result (bet: ${betAmount}, win: ${winAmount})`);
+        
+        // Debug nach der Vergabe
+        console.log('🔍 XP nach dem Spin:', {
+            currentXP: this.currentXP,
+            level: this.currentLevel,
+            xpAwarded: xpAmount,
+            awardResult: result
+        });
+        
+        return result;
     }
     
     // Calculate level based on total XP
@@ -319,9 +366,11 @@ class LevelSystem {
     }
     
     // Get XP required for a specific level
+    // Jedes Level erfordert doppelt so viel XP wie das vorherige Level
     getXPRequiredForLevel(level) {
         if (level <= 1) return 0;
-        return Math.floor(this.levelConfig.baseXPRequired * Math.pow(this.levelConfig.xpMultiplier, level - 2));
+        // Verwende direkt Multiplikator 2 für Verdoppelung (2^(level-1))
+        return Math.floor(this.levelConfig.baseXPRequired * Math.pow(2, level - 2));
     }
     
     // Get total XP needed to reach current level
@@ -335,26 +384,67 @@ class LevelSystem {
     
     // Get XP progress for current level
     getCurrentLevelProgress() {
-        const totalXP = this.getTotalXP();
-        const currentLevelStartXP = this.getTotalXPForLevel(this.currentLevel);
-        const nextLevelStartXP = this.getTotalXPForLevel(this.currentLevel + 1);
+        // Debug: Log input values
+        console.log('🔍 getCurrentLevelProgress - Input:', {
+            currentLevel: this.currentLevel,
+            currentXP: this.currentXP,
+        });
         
-        const currentLevelXP = totalXP - currentLevelStartXP;
-        const xpNeededForNextLevel = nextLevelStartXP - currentLevelStartXP;
+        // Das direkte currentXP verwenden (nicht totalXP)
+        const currentXP = this.currentXP;
         
-        return {
-            current: currentLevelXP,
+        // XP berechnen, die für das nächste Level benötigt werden
+        const xpNeededForNextLevel = this.getXPRequiredForLevel(this.currentLevel + 1);
+        
+        // Debug: Log calculation
+        console.log('🔍 XP Berechnung:', {
+            currentXP: currentXP,
+            xpNeededForNextLevel: xpNeededForNextLevel
+        });
+        
+        // Prozentsatz berechnen (sicherstellen, dass nicht durch 0 geteilt wird)
+        const percentage = xpNeededForNextLevel > 0 
+            ? Math.floor((currentXP / xpNeededForNextLevel) * 100)
+            : 100; // Wenn keine XP benötigt werden, 100% anzeigen
+        
+        // Ergebnis zurückgeben
+        const result = {
+            current: currentXP,
             needed: xpNeededForNextLevel,
-            percentage: Math.floor((currentLevelXP / xpNeededForNextLevel) * 100)
+            percentage: Math.min(percentage, 100) // Sicherstellen, dass nicht über 100% angezeigt wird
         };
+        
+        console.log('🔍 getCurrentLevelProgress - Result:', result);
+        return result;
     }
     
     // Get total XP earned
     getTotalXP() {
-        if (this.userData && this.userData.totalXP) {
-            return this.userData.totalXP;
+        // Debug log for tracing
+        console.log('🔍 getTotalXP - Input:', {
+            userData: this.userData ? 'available' : 'not available',
+            currentLevel: this.currentLevel,
+            currentXP: this.currentXP,
+        });
+        
+        let totalXP = 0;
+        
+        // Wenn Firebase-Daten vorhanden sind, verwende diese
+        if (this.userData && this.userData.totalXP !== undefined) {
+            totalXP = this.userData.totalXP;
+            console.log('🔍 getTotalXP - Using Firebase totalXP:', totalXP);
+        } else {
+            // Sonst berechne die Gesamt-XP aus Level und aktueller XP
+            const baseXP = this.getTotalXPForLevel(this.currentLevel);
+            totalXP = baseXP + this.currentXP;
+            console.log('🔍 getTotalXP - Calculated totalXP:', {
+                baseXP: baseXP,
+                currentXP: this.currentXP,
+                totalXP: totalXP
+            });
         }
-        return this.getTotalXPForLevel(this.currentLevel) + this.currentXP;
+        
+        return totalXP;
     }
     
     // Handle level up (improved with multiple level support)
@@ -498,10 +588,21 @@ class LevelSystem {
     
     // Update UI elements
     updateUI() {
+        console.log('🔄 Updating UI elements for level system');
+        
+        // Debug output to see current values
+        console.log('🔍 Current values for UI update:', {
+            level: this.currentLevel,
+            xp: this.currentXP,
+            isGuest: this.isGuest,
+            initialized: this.initialized
+        });
+        
         // Update level display
         const levelDisplay = document.getElementById('player-level');
         if (levelDisplay) {
             levelDisplay.textContent = this.isGuest ? 'Guest' : `Level ${this.currentLevel}`;
+            console.log(`🎮 Updated player-level display: ${levelDisplay.textContent}`);
         }
         
         // Update XP bar
@@ -509,6 +610,31 @@ class LevelSystem {
         
         // Update header info
         this.updateHeaderInfo();
+        
+        // Update all level displays across the site
+        this.updateAllLevelDisplays();
+        
+        // Manuell ein XP-Changed-Event auslösen, damit alle Listener informiert werden
+        const forceUpdateEvent = new CustomEvent('xp-changed', { 
+            detail: { 
+                forceUpdate: true, 
+                currentLevel: this.currentLevel, 
+                currentXP: this.currentXP 
+            }
+        });
+        window.dispatchEvent(forceUpdateEvent);
+    }
+    
+    // Update all level number displays across the site
+    updateAllLevelDisplays() {
+        // Find all elements that display the level number
+        const levelNumberElements = document.querySelectorAll('.level-number, #header-level-number');
+        
+        console.log(`🔢 Found ${levelNumberElements.length} level number elements to update`);
+        
+        levelNumberElements.forEach(element => {
+            element.textContent = this.currentLevel;
+        });
     }
     
     // Update XP progress bar
@@ -516,25 +642,56 @@ class LevelSystem {
         const xpBar = document.getElementById('xp-progress-bar');
         const xpText = document.getElementById('xp-progress-text');
         
-        if (!xpBar) return;
+        // Debug: Ausgabe vor Aktualisierung
+        console.log('🔍 XP-Bar Update - Elemente:', { 
+            xpBar: xpBar ? 'found' : 'not found', 
+            xpText: xpText ? 'found' : 'not found'
+        });
         
+        if (!xpBar) {
+            console.log('⚠️ XP-Bar nicht gefunden!');
+            return;
+        }
+        
+        // Aktuelle XP-Fortschrittsdaten holen
         const progress = this.getCurrentLevelProgress();
+        console.log('🔍 XP-Bar Update - Progress:', progress);
         
         // Update progress bar
         xpBar.style.width = `${progress.percentage}%`;
+        console.log(`📊 XP-Bar Breite auf ${progress.percentage}% gesetzt`);
         
         // Update progress text
         if (xpText) {
-            xpText.textContent = `${progress.current}/${progress.needed} XP`;
+            // Formatiere die Zahlen, um bessere Lesbarkeit zu gewährleisten
+            const formattedCurrent = progress.current.toLocaleString();
+            const formattedNeeded = progress.needed.toLocaleString();
+            xpText.textContent = `${formattedCurrent}/${formattedNeeded} XP`;
+            console.log(`📊 XP-Text aktualisiert: ${formattedCurrent}/${formattedNeeded} XP`);
+        }
+        
+        // Suche auch nach anderen XP-Bars, die möglicherweise nicht durch die Haupt-ID gefunden wurden
+        const otherXpBars = document.querySelectorAll('.xp-progress-fill:not(#xp-progress-bar)');
+        if (otherXpBars.length > 0) {
+            console.log(`🔍 ${otherXpBars.length} weitere XP-Bars gefunden`);
+            otherXpBars.forEach((bar, index) => {
+                bar.style.width = `${progress.percentage}%`;
+                console.log(`📊 Zusätzliche XP-Bar ${index + 1} aktualisiert: ${progress.percentage}%`);
+            });
         }
     }
     
     // Update header information
     updateHeaderInfo() {
+        console.log('🔄 Updating header level information');
+        
         // Update header level number
         const headerLevel = document.getElementById('header-level-number');
         if (headerLevel) {
             headerLevel.textContent = this.currentLevel;
+            console.log(`🎮 Updated header level number: ${this.currentLevel}`);
+        } else {
+            console.log('⚠️ header-level-number element not found');
         }
         
         // Update header XP text
@@ -542,13 +699,29 @@ class LevelSystem {
         if (headerXpText) {
             const progress = this.getCurrentLevelProgress();
             headerXpText.textContent = `${progress.current} XP / ${progress.needed} XP`;
+            console.log(`📊 Updated XP progress text: ${progress.current}/${progress.needed} (${progress.percentage}%)`);
+        } else {
+            console.log('⚠️ header-xp-text element not found');
         }
         
-        // Update header XP bar
-        const headerXpBar = document.querySelector('.xp-progress-fill');
-        if (headerXpBar) {
-            const progress = this.getCurrentLevelProgress();
-            headerXpBar.style.width = `${progress.percentage}%`;
+        // Update header XP bar - try different selectors to ensure it's found
+        const headerXpBarSelectors = ['.xp-progress-fill', '#header-xp-bar'];
+        let headerXpBarFound = false;
+        
+        for (const selector of headerXpBarSelectors) {
+            const headerXpBars = document.querySelectorAll(selector);
+            if (headerXpBars.length > 0) {
+                const progress = this.getCurrentLevelProgress();
+                headerXpBars.forEach(bar => {
+                    bar.style.width = `${progress.percentage}%`;
+                    headerXpBarFound = true;
+                    console.log(`📊 Updated XP progress bar: ${progress.percentage}% width`);
+                });
+            }
+        }
+        
+        if (!headerXpBarFound) {
+            console.log('⚠️ XP progress bar elements not found with any selector');
         }
     }
     
@@ -706,6 +879,56 @@ class LevelSystem {
         }
         
         return null; // All slots unlocked
+    }
+    
+    // Debug function to show current XP status
+    debugXPStatus() {
+        console.log('%c🔍 XP DEBUG INFO 🔍', 'background: #222; color: #bada55; font-size: 16px;');
+        console.log('Current Level:', this.currentLevel);
+        console.log('Current XP:', this.currentXP);
+        console.log('Total XP:', this.getTotalXP());
+        
+        const progress = this.getCurrentLevelProgress();
+        console.log('Level Progress:', progress);
+        
+        console.log('XP Required for next levels:');
+        for (let i = this.currentLevel; i <= this.currentLevel + 3; i++) {
+            if (i <= this.levelConfig.maxLevel) {
+                console.log(`  Level ${i} to ${i+1}: ${this.getXPRequiredForLevel(i+1)} XP`);
+            }
+        }
+        
+        console.log('Total XP for levels:');
+        for (let i = 1; i <= this.currentLevel + 1; i++) {
+            if (i <= this.levelConfig.maxLevel) {
+                console.log(`  Total to Level ${i}: ${this.getTotalXPForLevel(i)} XP`);
+            }
+        }
+        
+        console.log('%c🔍 END DEBUG INFO 🔍', 'background: #222; color: #bada55; font-size: 16px;');
+    }
+    
+    // Zeigt eine Übersicht der XP-Anforderungen für jedes Level an
+    showXPRequirements() {
+        console.log('%c🎮 XP-Anforderungen für Level-Aufstiege 🎮', 'background: #222; color: #bada55; font-size: 16px;');
+        console.log('Base XP (Level 1 zu 2):', this.levelConfig.baseXPRequired);
+        
+        let totalXP = 0;
+        let levelXP = [];
+        
+        for (let i = 1; i <= Math.min(this.levelConfig.maxLevel, 20); i++) {
+            const xpForLevel = this.getXPRequiredForLevel(i);
+            totalXP += xpForLevel;
+            
+            levelXP.push({
+                level: i,
+                xpForThisLevel: xpForLevel,
+                totalXpToReachLevel: totalXP
+            });
+        }
+        
+        console.table(levelXP);
+        console.log('%c📊 Die XP verdoppeln sich mit jedem Level 📊', 'background: #222; color: #bada55; font-size: 16px;');
     }
 }
 

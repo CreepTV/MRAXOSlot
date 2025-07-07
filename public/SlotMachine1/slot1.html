@@ -61,7 +61,6 @@
                             </div>
                             <div class="level-details">
                                 <div class="level-title">Premium Spieler</div>
-                                <span class="xp-text" id="header-xp-text">25 XP / 20.000 XP</span>
                             </div>
                         </div>
                         <div class="xp-progress-container">
@@ -73,57 +72,12 @@
                                     <div class="xp-milestone" style="left: 75%"></div>
                                 </div>
                             </div>
+                            <span class="xp-text" id="header-xp-text">25 XP / 20.000 XP</span>
                         </div>
                     </div>
                     <div class="profile">
                         <div class="profile-level-indicator"></div>
                         <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil" id="profile-img" />
-                        <div class="profile-dropdown" id="profile-dropdown">
-                            <div class="dropdown-content">
-                                <!-- Für nicht eingeloggte Benutzer -->
-                                <div class="guest-menu">
-                                    <div class="dropdown-item" id="login-btn">
-                                        <span class="dropdown-icon">🔑</span>
-                                        Anmelden
-                                    </div>
-                                    <div class="dropdown-item" id="register-btn">
-                                        <span class="dropdown-icon">📝</span>
-                                        Registrieren
-                                    </div>
-                                    <div class="dropdown-divider"></div>
-                                    <div class="dropdown-item guest-info">
-                                        <span class="dropdown-icon">👤</span>
-                                        Gastmodus
-                                    </div>
-                                </div>
-                                
-                                <!-- Für eingeloggte Benutzer -->
-                                <div class="user-menu" style="display: none;">
-                                    <div class="user-info">
-                                        <span class="username" id="username-display">Benutzer</span>
-                                        <span class="user-email" id="email-display">user@example.com</span>
-                                    </div>
-                                    <div class="dropdown-divider"></div>
-                                    <div class="dropdown-item" id="public-profile-btn">
-                                        <span class="dropdown-icon">👁️</span>
-                                        Öffentliches Profil
-                                    </div>
-                                    <div class="dropdown-item" id="profile-settings">
-                                        <span class="dropdown-icon">⚙️</span>
-                                        Konto Settings
-                                    </div>
-                                    <div class="dropdown-item" id="stats-btn">
-                                        <span class="dropdown-icon">📊</span>
-                                        Statistiken
-                                    </div>
-                                    <div class="dropdown-divider"></div>
-                                    <div class="dropdown-item" id="logout-btn">
-                                        <span class="dropdown-icon">🚪</span>
-                                        Abmelden
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <!-- Ende Levelanzeige -->
@@ -171,8 +125,8 @@
         </div>
     </div>
 
-    <!-- Load external profile and account settings components -->
-    <div id="profile-settings-container"></div>
+    <!-- Load external profile and account settings components - move to absolute positioning -->
+    <div id="profile-settings-container" style="position: absolute; z-index: 1000;"></div>
 
     <script>
         // Load external components when DOM is ready

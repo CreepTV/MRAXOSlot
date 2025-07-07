@@ -122,7 +122,25 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   
   // Ladebildschirm initialisieren
-  initializeLoadingScreen();
+  // initializeLoadingScreen();
+  
+  // Da Ladebildschirm deaktiviert ist, Hauptinhalt sofort anzeigen
+  const loadingScreen = document.getElementById('loading-screen');
+  const mainContent = document.getElementById('main-content');
+  
+  if (loadingScreen) {
+    loadingScreen.style.display = 'none';
+  }
+  
+  if (mainContent) {
+    mainContent.style.display = 'block';
+    mainContent.classList.add('loaded');
+  }
+  
+  // Pop-in Animationen sofort starten
+  setTimeout(() => {
+    startPopInAnimations();
+  }, 100);
   // Pop-in Animationen starten
   function startPopInAnimations() {
     // Header Elemente
@@ -180,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // ZENTRALE STEUERUNGSVARIABLEN
   let musicStarted = false;
-  let loadingComplete = false;
+  let loadingComplete = true; // Sofort auf true setzen, da Ladebildschirm deaktiviert
   let userInteracted = false;
   let autoPlayBlocked = false;
   let spinMusicTimeout = null;
@@ -1261,7 +1279,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       
       // Award XP for the win
       if (window.levelSystem) {
+        console.log(`🎯 Vergebe XP für Gewinn: Einsatz=${bet}, Gewinn=${win}`);
         window.levelSystem.awardSpinXP(bet, win);
+        
+        // Zeige XP-Gewinn in einem kleinen Pop-up an
+        showXPNotification(bet, win);
       }
       
       // Bestimme Gewinn-Level für verschiedene Meldungen und Seitenanimationen
@@ -1305,7 +1327,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     } else {
       // Award base XP for spin (even when no win)
       if (window.levelSystem) {
+        console.log(`🎯 Vergebe Basis-XP für Spin ohne Gewinn: Einsatz=${bet}`);
         window.levelSystem.awardSpinXP(bet, 0);
+        
+        // Zeige XP-Gewinn in einem kleinen Pop-up an (nur für Basis-XP)
+        showXPNotification(bet, 0);
       }
       
       resultEl.textContent = 'Leider kein Gewinn.';
@@ -1316,6 +1342,143 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     // Balance is already saved above when changed
   }
+
+  /**
+ * Zeigt eine kleine Notification für den XP-Gewinn an
+ */
+function showXPNotification(bet, win) {
+  if (!window.levelSystem) return;
+  
+  // Berechne ungefähr, wie viel XP vergeben wurde
+  let estimatedXP = window.levelSystem.xpRewards.spin;
+  
+  // Bonus für Einsatz
+  const betBonus = Math.floor(bet / 25); // Aktualisiert für das neue XP-System
+  estimatedXP += Math.min(betBonus, 20);  // Verdoppelt für das neue XP-System
+  
+  // Bonus für Gewinn
+  if (win > 0) {
+    const winMultiplier = win / bet;
+    
+    if (winMultiplier >= 100) {
+      estimatedXP += window.levelSystem.xpRewards.jackpot;
+    } else if (winMultiplier >= 20) {
+      estimatedXP += window.levelSystem.xpRewards.bigWin;
+    } else if (winMultiplier >= 5) {
+      estimatedXP += window.levelSystem.xpRewards.mediumWin;
+    } else {
+      estimatedXP += window.levelSystem.xpRewards.smallWin;
+    }
+    
+    // Bonus XP für absolute Gewinnsummen (verdoppelt für das neue XP-System)
+    if (win >= 10000) {
+      estimatedXP += 40; // Verdoppelt von 20
+    } else if (win >= 5000) {
+      estimatedXP += 30; // Verdoppelt von 15
+    } else if (win >= 2000) {
+      estimatedXP += 20; // Verdoppelt von 10
+    }
+  }
+  
+  // Erstelle Notification-Element
+  const notificationEl = document.createElement('div');
+  notificationEl.className = 'xp-notification';
+  
+  // XP-Animation basierend auf der Menge (angepasst für das neue XP-System)
+  let xpClass = 'normal-xp';
+  if (estimatedXP >= 80) xpClass = 'mega-xp';      // Verdoppelt von 40
+  else if (estimatedXP >= 40) xpClass = 'big-xp';  // Verdoppelt von 20
+  
+  notificationEl.innerHTML = `
+    <div class="xp-notification-content ${xpClass}">
+      <span class="xp-icon">✨</span>
+      <span class="xp-value">+${estimatedXP} XP</span>
+    </div>
+  `;
+  
+  // Füge Stil für die Animation hinzu (wird nur hinzugefügt, falls noch nicht vorhanden)
+  if (!document.getElementById('xp-notification-style')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'xp-notification-style';
+    styleEl.textContent = `
+      .xp-notification {
+        position: fixed;
+        bottom: 120px;
+        right: 20px;
+        z-index: 1000;
+        animation: xp-slide-in 0.5s ease-out, xp-fade-out 0.5s ease-in 2s forwards;
+        pointer-events: none;
+      }
+      
+      .xp-notification-content {
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+      
+      .xp-icon {
+        font-size: 18px;
+      }
+      
+      .xp-value {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      
+      .normal-xp {
+        border: 1px solid #4CAF50;
+      }
+      
+      .big-xp {
+        border: 2px solid #FFC107;
+        font-size: 18px;
+        animation: xp-pulse 0.5s infinite alternate;
+      }
+      
+      .mega-xp {
+        border: 3px solid #FF5722;
+        font-size: 20px;
+        animation: xp-pulse 0.5s infinite alternate, xp-rainbow 2s linear infinite;
+      }
+      
+      @keyframes xp-slide-in {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      @keyframes xp-fade-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      
+      @keyframes xp-pulse {
+        from { transform: scale(1); }
+        to { transform: scale(1.1); }
+      }
+      
+      @keyframes xp-rainbow {
+        0% { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+  
+  // Füge die Notification zum Dokument hinzu
+  document.body.appendChild(notificationEl);
+  
+  // Entferne die Notification nach 3 Sekunden
+  setTimeout(() => {
+    if (notificationEl.parentElement) {
+      notificationEl.remove();
+    }
+  }, 3000);
+}
 
   // Enhanced Titel-Animation: Wort für Wort einblenden mit modernen Effekten
   function animateTitle(title, titleColor) {
